@@ -2,9 +2,10 @@
     import pg from 'pg';
     import { drizzle } from 'drizzle-orm/node-postgres';
     import * as schema from './schema.js';
+    import { DB, PG_POOL } from './db.tokens.js';
+    import { TenantDb } from './tenant-db.service.js';
 
-    export const PG_POOL = Symbol('PG_POOL');
-    export const DB = Symbol('DB');
+    export { DB, PG_POOL };
 
     @Global()
     @Module({
@@ -19,8 +20,9 @@
           inject: [PG_POOL],
           useFactory: (pool: pg.Pool) => drizzle(pool, { schema }),
         },
+        TenantDb,
       ],
-      exports: [PG_POOL, DB],
+      exports: [PG_POOL, DB, TenantDb],
     })
     export class DbModule implements OnApplicationShutdown {
       constructor(@Inject(PG_POOL) private readonly pool: pg.Pool) {}

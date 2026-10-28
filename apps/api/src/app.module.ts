@@ -1,3 +1,5 @@
+import { AuthModule } from './auth/auth.module.js';
+import { ContactsModule } from './contacts/contacts.module.js';
 import { DbModule } from './db/db.module.js';
 import { HealthController } from './health/health.controller.js';
 import { Module } from '@nestjs/common';
@@ -9,7 +11,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
 @Module({
   imports: [
-    DbModule,
+    DbModule,AuthModule, ContactsModule,
     // Distributed tracing, auto-correlated logs, request/job metrics, error
     // telemetry, alarms, and more — out of the box. Sign up at https://observe.nestjs.com,
     //
