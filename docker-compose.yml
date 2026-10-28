@@ -5,7 +5,7 @@
         image: crm-api:local
         command: ["node", "dist/db/migrate.js"]
         environment:
-          DATABASE_URL: postgres://crm:crm@postgres:5432/crm
+          MIGRATION_DATABASE_URL: postgres://crm:crm@postgres:5432/crm
         depends_on:
           postgres:
             condition: service_healthy
@@ -22,7 +22,7 @@
             required: false
         environment:
           PORT: 3000
-          DATABASE_URL: postgres://crm:crm@postgres:5432/crm
+          DATABASE_URL: postgres://crm_app:crm_app@postgres:5432/crm
           REDIS_URL: redis://redis:6379
         healthcheck:
           test: ["CMD-SHELL", "wget -qO- http://localhost:3000/health/ready || exit 1"]
@@ -44,7 +44,8 @@
         ports:
           - "127.0.0.1:5434:5432"
         volumes:
-          - pgdata:/var/lib/postgresql/data
+           - pgdata:/var/lib/postgresql/data
+           - ./infra/postgres/init:/docker-entrypoint-initdb.d:ro
         healthcheck:
           test: ["CMD-SHELL", "pg_isready -U crm -d crm"]
           interval: 5s

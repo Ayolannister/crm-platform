@@ -8,6 +8,20 @@
       "when": 1793197975115,
       "tag": "0000_lowly_forge",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793201071077,
+      "tag": "0001_premium_victor_mancha",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793201105248,
+      "tag": "0002_rls_contacts",
+      "breakpoints": true
     }
   ]
 }
