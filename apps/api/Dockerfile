@@ -17,6 +17,7 @@
    WORKDIR /app
    COPY --from=prod-deps --chown=node:node /app/node_modules ./node_modules
    COPY --from=build --chown=node:node /app/dist ./dist
+   COPY --from=build --chown=node:node /app/drizzle ./drizzle
    COPY --chown=node:node package.json ./
    USER node
    EXPOSE 3000
