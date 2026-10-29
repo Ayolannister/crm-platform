@@ -20,8 +20,19 @@
 
       create(orgId: string, dto: CreateContactDto) {
         return this.tenantDb.run(orgId, async (tx) => {
-          const [row] = await tx.insert(contacts).values({ ...dto, orgId }).returning();
-          return row;
+          // const [row] = await tx.insert(contacts).values({ ...dto, orgId }).returning();
+          // return row;
+        const [row] = await tx
+          .insert(contacts)
+          .values({
+               orgId,
+               firstName: dto.firstName,
+               lastName: dto.lastName,
+               email: dto.email,
+               phone: dto.phone,
+              })
+     .returning();
+     return row;
         });
       }
     }
