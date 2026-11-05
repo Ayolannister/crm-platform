@@ -43,3 +43,10 @@ migrateResources:
 podDisruptionBudget:
   enabled: true
   minAvailable: 1
+
+# Creates the crm_owner and crm_app roles on databases without init scripts (RDS).
+# Local environments create them with an init script, so this is off by default.
+dbBootstrap:
+  enabled: false
+  image: postgres:17-alpine
+  secret: crm-db-bootstrap
