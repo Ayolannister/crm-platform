@@ -1,0 +1,25 @@
+installCRDs: true
+
+# Lean for a small dev node. Production keeps the webhook, which validates
+# ExternalSecret objects when they are applied.
+webhook:
+  create: false
+certController:
+  create: false
+
+# Point the AWS SDK at Floci, reachable from pods on its fixed address.
+# On real AWS these are removed and the SDK uses AWS endpoints.
+extraEnv:
+  - name: AWS_ENDPOINT_URL
+    value: http://10.77.0.10:4566
+  - name: AWS_STS_ENDPOINT
+    value: http://10.77.0.10:4566
+  - name: AWS_SECRETSMANAGER_ENDPOINT
+    value: http://10.77.0.10:4566
+
+resources:
+  requests:
+    cpu: 10m
+    memory: 64Mi
+  limits:
+    memory: 256Mi

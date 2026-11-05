@@ -119,7 +119,13 @@ jobs:
         run: >
           helm template crm-api deploy/helm/crm-api -n crm -f deploy/helm/crm-api/values-local.yaml
           | docker run --rm -i ghcr.io/yannh/kubeconform:${{ env.KUBECONFORM_VERSION }} -strict -summary -
+              
+      - name: Validate rendered chart (aws-dev)
+        run: >
+          helm template crm-api deploy/helm/crm-api -n crm -f deploy/helm/crm-api/values-aws-dev.yaml
+          | docker run --rm -i ghcr.io/yannh/kubeconform:${{ env.KUBECONFORM_VERSION }} -strict -summary -
 
+        
       - name: Validate local dependency manifests
         run: >
           docker run --rm -v "$PWD:/work"

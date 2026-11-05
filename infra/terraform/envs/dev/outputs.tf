@@ -44,3 +44,6 @@ output "secret_names" {
     api          = aws_secretsmanager_secret.api.name
   }
 }
+output "external_secrets_role_arn" {
+  value = aws_iam_role.external_secrets.arn
+}
