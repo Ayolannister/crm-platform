@@ -1,0 +1,10 @@
+# Installed from chart argo/argo-cd version 10.13.1
+# Lean Argo CD for a local kind cluster.
+dex:
+  enabled: false        # no SSO locally; we use the built-in admin account
+notifications:
+  enabled: false        # no Slack/email alerts locally
+
+configs:
+  params:
+    server.insecure: true   # serve plain HTTP behind port-forward; production uses TLS via ingress
