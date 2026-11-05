@@ -1,0 +1,45 @@
+replicaCount: 2
+
+image:
+  repository: ghcr.io/ayolannister/crm-api
+  # Set exactly one of these per environment. Digest wins if both are set.
+  digest: ""
+  tag: ""
+  pullPolicy: IfNotPresent
+
+containerPort: 3000
+
+# Non-secret settings, rendered into a ConfigMap.
+config:
+  NODE_ENV: production
+  REDIS_URL: redis://redis:6379
+
+# Names of Secrets that already exist in the namespace.
+# The chart never contains secret values.
+secrets:
+  app: crm-api
+  migrate: crm-migrate
+
+migrations:
+  enabled: true
+
+service:
+  port: 80
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    memory: 512Mi
+
+migrateResources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    memory: 256Mi
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
