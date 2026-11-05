@@ -3,6 +3,12 @@ name: CI
 on:
   push:
     branches: [main]
+    # Release PRs and infra changes only touch these paths. Skipping them on
+    # main prevents a merged release PR from triggering yet another release.
+    paths-ignore:
+      - "deploy/**"
+      - "infra/**"
+      - "**/*.md"
   pull_request:
     branches: [main]
 
@@ -16,6 +22,8 @@ concurrency:
 env:
   TRIVY_VERSION: "0.76.1"
   GITLEAKS_VERSION: "v8.30.1"
+  KUBECONFORM_VERSION: "v0.7.0"
+  HELM_VERSION: "v3.20.2"
 
 jobs:
   test:
@@ -72,7 +80,7 @@ jobs:
       - name: Set up Helm
         uses: azure/setup-helm@v4
         with:
-          version: v4.0.0
+          version: ${{ env.HELM_VERSION }}
 
       - name: Lint chart
         run: helm lint deploy/helm/crm-api -f deploy/helm/crm-api/values-local.yaml
@@ -80,10 +88,12 @@ jobs:
       - name: Validate rendered chart
         run: >
           helm template crm-api deploy/helm/crm-api -n crm -f deploy/helm/crm-api/values-local.yaml
-          | docker run --rm -i ghcr.io/yannh/kubeconform:v0.7.0 -strict -summary -
+          | docker run --rm -i ghcr.io/yannh/kubeconform:${{ env.KUBECONFORM_VERSION }} -strict -summary -
 
       - name: Validate local dependency manifests
-        run: docker run --rm -v "$PWD:/work" ghcr.io/yannh/kubeconform:v0.7.0 -strict -summary /work/deploy/k8s
+        run: >
+          docker run --rm -v "$PWD:/work"
+          ghcr.io/yannh/kubeconform:${{ env.KUBECONFORM_VERSION }} -strict -summary /work/deploy/k8s
 
   image:
     name: Build, scan and publish image
@@ -94,6 +104,10 @@ jobs:
       packages: write
     env:
       PUBLISH: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    outputs:
+      image: ${{ steps.push.outputs.image }}
+      tag: ${{ steps.push.outputs.tag }}
+      digest: ${{ steps.push.outputs.digest }}
     steps:
       - name: Check out code
         uses: actions/checkout@v5
@@ -107,6 +121,7 @@ jobs:
           context: apps/api
           load: true
           tags: crm-api:local
+          build-args: GIT_SHA=${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -143,12 +158,57 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Push the tested image
+        id: push
         if: env.PUBLISH == 'true'
         run: |
           IMAGE="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/crm-api"
-          SHORT_SHA="${GITHUB_SHA::7}"
-          docker tag crm-api:local "$IMAGE:sha-$SHORT_SHA"
+          TAG="sha-${GITHUB_SHA::7}"
+          docker tag crm-api:local "$IMAGE:$TAG"
           docker tag crm-api:local "$IMAGE:main"
-          docker push "$IMAGE:sha-$SHORT_SHA"
+          docker push "$IMAGE:$TAG"
           docker push "$IMAGE:main"
-          echo "Published \`$IMAGE:sha-$SHORT_SHA\`" >> "$GITHUB_STEP_SUMMARY"
+          DIGEST=$(docker inspect --format '{{index .RepoDigests 0}}' "$IMAGE:$TAG" | cut -d@ -f2)
+          echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
+          echo "Published \`$IMAGE:$TAG\` (\`$DIGEST\`)" >> "$GITHUB_STEP_SUMMARY"
+
+  release-local:
+    name: Open local release PR
+    needs: image
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get a short-lived bot token
+        id: bot
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ vars.CRM_BOT_APP_ID }}
+          private-key: ${{ secrets.CRM_BOT_PRIVATE_KEY }}
+
+      - name: Check out code
+        uses: actions/checkout@v5
+        with:
+          token: ${{ steps.bot.outputs.token }}
+
+      - name: Point local values at the new image
+        env:
+          DIGEST: ${{ needs.image.outputs.digest }}
+        run: yq -i '.image.digest = strenv(DIGEST)' deploy/helm/crm-api/values-local.yaml
+
+      - name: Open or update the release PR
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ steps.bot.outputs.token }}
+          branch: release/local
+          delete-branch: true
+          commit-message: "release(local): deploy crm-api ${{ needs.image.outputs.tag }}"
+          title: "Release crm-api ${{ needs.image.outputs.tag }} to local"
+          body: |
+            Automated release PR, opened after a successful build on `main`.
+
+            - Image: `${{ needs.image.outputs.image }}:${{ needs.image.outputs.tag }}`
+            - Digest: `${{ needs.image.outputs.digest }}`
+            - Built from: ${{ github.sha }}
+
+            Merging this PR deploys the image to the local cluster through Argo CD.

@@ -1,26 +1,30 @@
-    import { Controller, Get, Inject, ServiceUnavailableException } from '@nestjs/common';
-    import pg from 'pg';
-    import { PG_POOL } from '../db/db.module.js';
+import { Controller, Get, Inject, ServiceUnavailableException } from '@nestjs/common';
+import pg from 'pg';
+import { PG_POOL } from '../db/db.module.js';
 
-    @Controller('health')
-    export class HealthController {
-      constructor(@Inject(PG_POOL) private readonly pool: pg.Pool) {}
+@Controller('health')
+export class HealthController {
+  constructor(@Inject(PG_POOL) private readonly pool: pg.Pool) {}
 
-      @Get('live')
-      live() {
-        return { status: 'ok', uptime: process.uptime() };
-      }
+  @Get('live')
+  live() {
+    return {
+      status: 'ok',
+      uptime: process.uptime(),
+      version: process.env.GIT_SHA ?? 'unknown',
+    };
+  }
 
-      @Get('ready')
-      async ready() {
-        try {
-          await this.pool.query('SELECT 1');
-          return { status: 'ok', checks: { database: 'up' } };
-        } catch {
-          throw new ServiceUnavailableException({
-            status: 'error',
-            checks: { database: 'down' },
-          });
-        }
-      }
+  @Get('ready')
+  async ready() {
+    try {
+      await this.pool.query('SELECT 1');
+      return { status: 'ok', checks: { database: 'up' } };
+    } catch {
+      throw new ServiceUnavailableException({
+        status: 'error',
+        checks: { database: 'down' },
+      });
     }
+  }
+}
