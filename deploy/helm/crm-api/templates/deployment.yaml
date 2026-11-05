@@ -1,15 +1,15 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: crm-api
-  namespace: crm
+  name: {{ include "crm-api.fullname" . }}
   labels:
-    app: crm-api
+    {{- include "crm-api.labels" . | nindent 4 }}
+    app.kubernetes.io/component: api
 spec:
-  replicas: 2
+  replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: crm-api
+      {{- include "crm-api.apiSelectorLabels" . | nindent 6 }}
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -18,26 +18,26 @@ spec:
   template:
     metadata:
       labels:
-        app: crm-api
+        {{- include "crm-api.labels" . | nindent 8 }}
+        app.kubernetes.io/component: api
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:
       terminationGracePeriodSeconds: 30
       securityContext:
-        runAsNonRoot: true
-        runAsUser: 1000
-        runAsGroup: 1000
-        seccompProfile:
-          type: RuntimeDefault
+        {{- include "crm-api.podSecurityContext" . | nindent 8 }}
       containers:
         - name: api
-          image: ghcr.io/ayolannister/crm-api@sha256:a7fc6d0e4799b331c21ff66ea0519838de08340ca1b3f8bbbf8682304463a727
+          image: {{ include "crm-api.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - name: http
-              containerPort: 3000
+              containerPort: {{ .Values.containerPort }}
           envFrom:
             - configMapRef:
-                name: crm-api
+                name: {{ include "crm-api.fullname" . }}
             - secretRef:
-                name: crm-api
+                name: {{ .Values.secrets.app }}
           startupProbe:
             httpGet:
               path: /health/live
@@ -57,33 +57,12 @@ spec:
             periodSeconds: 5
             failureThreshold: 2
           resources:
-            requests:
-              cpu: 100m
-              memory: 128Mi
-            limits:
-              memory: 512Mi
+            {{- toYaml .Values.resources | nindent 12 }}
           securityContext:
-            allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true
-            capabilities:
-              drop:
-                - ALL
+            {{- include "crm-api.containerSecurityContext" . | nindent 12 }}
           volumeMounts:
             - name: tmp
               mountPath: /tmp
       volumes:
         - name: tmp
           emptyDir: {}
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: crm-api
-  namespace: crm
-spec:
-  selector:
-    app: crm-api
-  ports:
-    - name: http
-      port: 80
-      targetPort: http

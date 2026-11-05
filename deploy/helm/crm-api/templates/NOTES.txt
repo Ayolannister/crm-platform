@@ -1,0 +1,7 @@
+{{ include "crm-api.fullname" . }} is deployed to namespace {{ .Release.Namespace }}.
+
+Reach it locally:
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "crm-api.fullname" . }} 8080:{{ .Values.service.port }}
+
+Then run the smoke tests:
+  BASE_URL=http://localhost:8080 ./scripts/smoke-test.sh
