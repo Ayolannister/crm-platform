@@ -24,6 +24,14 @@ resource "aws_eks_cluster" "this" {
 
   enabled_cluster_log_types = ["api", "audit", "authenticator"]
 
+  lifecycle {
+    # EKS cannot remove Secrets encryption once it is enabled, so the only possible
+    # change here is re-adding it. Floci does not implement AssociateEncryptionConfig
+    # and can drop encryptionConfig from DescribeCluster after a restart, which would
+    # otherwise make every plan try (and fail) to re-associate it.
+    ignore_changes = [encryption_config, enabled_cluster_log_types, ]
+  }
+
   # The role must have its policy before EKS uses it, and must keep it until the cluster is gone.
   depends_on = [aws_iam_role_policy_attachment.eks_cluster]
 }

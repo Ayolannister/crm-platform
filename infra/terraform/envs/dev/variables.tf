@@ -59,3 +59,30 @@ variable "node_max_size" {
   type    = number
   default = 2
 }
+variable "db_engine_version" {
+  description = "PostgreSQL major version for RDS."
+  type        = string
+  default     = "17"
+}
+
+variable "db_instance_class" {
+  type    = string
+  default = "db.t4g.micro"
+}
+
+variable "db_multi_az" {
+  description = "Standby replica in a second AZ. Doubles cost; use in prod."
+  type        = bool
+  default     = false
+}
+
+variable "db_deletion_protection" {
+  description = "Refuse deletion and take a final snapshot. Use in prod."
+  type        = bool
+  default     = false
+}
+variable "secret_recovery_window_days" {
+  description = "Days a deleted secret can be restored. 0 deletes immediately (dev only)."
+  type        = number
+  default     = 0
+}

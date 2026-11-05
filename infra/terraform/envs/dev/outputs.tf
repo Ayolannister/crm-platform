@@ -29,3 +29,18 @@ output "cluster_security_group_id" {
 output "cluster_oidc_issuer" {
   value = aws_eks_cluster.this.identity[0].oidc[0].issuer
 }
+output "db_address" {
+  value = aws_db_instance.this.address
+}
+
+output "db_port" {
+  value = aws_db_instance.this.port
+}
+
+output "secret_names" {
+  value = {
+    db_bootstrap = aws_secretsmanager_secret.db_bootstrap.name
+    migrate      = aws_secretsmanager_secret.migrate.name
+    api          = aws_secretsmanager_secret.api.name
+  }
+}
