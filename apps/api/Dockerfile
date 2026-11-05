@@ -25,6 +25,8 @@
    COPY --from=build --chown=node:node /app/dist ./dist
    COPY --from=build --chown=node:node /app/drizzle ./drizzle
    COPY --chown=node:node package.json ./
+   ARG GIT_SHA=unknown
+   ENV GIT_SHA=$GIT_SHA
    USER node
    EXPOSE 3000
    CMD ["node", "dist/main.js"]
