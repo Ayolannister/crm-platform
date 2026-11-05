@@ -41,6 +41,7 @@
           POSTGRES_USER: crm
           POSTGRES_PASSWORD: crm
           POSTGRES_DB: crm
+          APP_DB_PASSWORD: crm_app
         ports:
           - "127.0.0.1:5434:5432"
         volumes:

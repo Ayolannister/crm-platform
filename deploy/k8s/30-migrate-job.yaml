@@ -1,0 +1,34 @@
+    apiVersion: batch/v1
+    kind: Job
+    metadata:
+      name: crm-migrate
+      namespace: crm
+    spec:
+      backoffLimit: 3
+      template:
+        spec:
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: migrate
+              image: ghcr.io/ayolannister/crm-api@sha256:a7fc6d0e4799b331c21ff66ea0519838de08340ca1b3f8bbbf8682304463a727
+              command: ["node", "dist/db/migrate.js"]
+              envFrom:
+                - secretRef:
+                    name: crm-migrate
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+                limits:
+                  memory: 256Mi
