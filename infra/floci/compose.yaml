@@ -6,14 +6,26 @@ services:
     container_name: crm-floci
     ports:
       - "4566:4566"            # all AWS APIs
-      - "7001-7099:7001-7099"  # RDS database proxies (next lesson)
+      - "7001-7099:7001-7099"  # RDS database proxies
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock  # lets Floci start RDS and EKS containers
       - floci-data:/app/data
+    networks:
+      default:
+        ipv4_address: 10.77.0.10  # fixed, so pods can reach Floci without DNS
     environment:
-      FLOCI_STORAGE_MODE: hybrid                     # state survives restarts
+      FLOCI_STORAGE_MODE: hybrid                           # state survives restarts
       FLOCI_SERVICES_DOCKER_NETWORK: crm-floci_default
-      FLOCI_SERVICES_ECR_URI_STYLE: path            # localhost:<port>/<account>/<region>/<repo>
+      FLOCI_SERVICES_ECR_URI_STYLE: path                   # localhost:<port>/<account>/<region>/<repo>
+      FLOCI_SERVICES_RDS_ENDPOINT_HOST: 10.77.0.10         # RDS endpoints advertise the fixed address
+      FLOCI_SERVICES_EKS_KEEP_RUNNING_ON_SHUTDOWN: "true"  # k3s survives Floci restarts and crashes
+      FLOCI_SERVICES_EKS_MAX_MEMORY_MIB: "2560"            # hard memory ceiling for the cluster
+
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: 10.77.0.0/24  # avoids Docker's default 172.x pools, the VPC (10.20) and Kubernetes (10.42, 10.100)
 
 volumes:
   floci-data:
