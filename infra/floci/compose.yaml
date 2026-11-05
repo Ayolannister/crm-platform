@@ -1,0 +1,19 @@
+name: crm-floci
+
+services:
+  floci:
+    image: floci/floci:1.7.0
+    container_name: crm-floci
+    ports:
+      - "4566:4566"            # all AWS APIs
+      - "7001-7099:7001-7099"  # RDS database proxies (next lesson)
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock  # lets Floci start RDS and EKS containers
+      - floci-data:/app/data
+    environment:
+      FLOCI_STORAGE_MODE: hybrid                     # state survives restarts
+      FLOCI_SERVICES_DOCKER_NETWORK: crm-floci_default
+      FLOCI_SERVICES_ECR_URI_STYLE: path            # localhost:<port>/<account>/<region>/<repo>
+
+volumes:
+  floci-data:
