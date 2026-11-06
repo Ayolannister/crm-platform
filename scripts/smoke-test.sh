@@ -74,5 +74,11 @@
       "{\"orgName\":\"dup\",\"orgSlug\":\"$SLUG_A\",\"email\":\"a-$RUN_ID@smoke.test\",\"password\":\"$PASSWORD\"}")" \
       "duplicate signup is rejected"
 
+expect 200 "$(request GET /metrics)" "metrics endpoint responds"
+grep -q 'http_request_duration_seconds_count' "$BODY_FILE" || fail "request histogram missing from /metrics"
+pass "request histogram is exported"
+    expect 200 "$(request GET /metrics)" "metrics endpoint responds"
+    grep -q 'http_request_duration_seconds_count' "$BODY_FILE" || fail "request histogram missing from /metrics"
+    pass "request histogram is exported"
     rm -f "$BODY_FILE"
     echo "All smoke tests passed"
