@@ -1,0 +1,12 @@
+{{- if .Values.metrics.dashboard.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "crm-api.fullname" . }}-dashboard
+  labels:
+    {{- include "crm-api.labels" . | nindent 4 }}
+    grafana_dashboard: "1"
+data:
+  crm-api.json: |-
+{{ .Files.Get "dashboards/crm-api.json" | indent 4 }}
+{{- end }}

@@ -50,3 +50,12 @@ dbBootstrap:
   enabled: false
   image: postgres:17-alpine
   secret: crm-db-bootstrap
+# Prometheus Operator objects. Off by default: only clusters running the operator enable them.
+metrics:
+  serviceMonitor:
+    enabled: false
+    interval: 15s
+  prometheusRule:
+    enabled: false
+  dashboard:
+    enabled: false

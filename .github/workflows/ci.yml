@@ -118,12 +118,12 @@ jobs:
       - name: Validate rendered chart
         run: >
           helm template crm-api deploy/helm/crm-api -n crm -f deploy/helm/crm-api/values-local.yaml
-          | docker run --rm -i ghcr.io/yannh/kubeconform:${{ env.KUBECONFORM_VERSION }} -strict -summary -
+          | docker run --rm -i ghcr.io/yannh/kubeconform:${{ env.KUBECONFORM_VERSION }} -strict -summary -schema-location default -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' -
               
       - name: Validate rendered chart (aws-dev)
         run: >
           helm template crm-api deploy/helm/crm-api -n crm -f deploy/helm/crm-api/values-aws-dev.yaml
-          | docker run --rm -i ghcr.io/yannh/kubeconform:${{ env.KUBECONFORM_VERSION }} -strict -summary -
+          | docker run --rm -i ghcr.io/yannh/kubeconform:${{ env.KUBECONFORM_VERSION }} -strict -summary -schema-location default -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' -
 
         
       - name: Validate local dependency manifests

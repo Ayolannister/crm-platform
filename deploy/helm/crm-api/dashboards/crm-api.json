@@ -1,0 +1,67 @@
+{
+  "title": "CRM API",
+  "uid": "crm-api",
+  "schemaVersion": 39,
+  "refresh": "30s",
+  "time": { "from": "now-1h", "to": "now" },
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Availability, last 5 minutes (SLO 99.5%)",
+      "gridPos": { "x": 0, "y": 0, "w": 8, "h": 5 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "refId": "A", "expr": "1 - crm_api:error_ratio:rate5m" }],
+      "fieldConfig": { "defaults": { "unit": "percentunit", "decimals": 2 } }
+    },
+    {
+      "type": "stat",
+      "title": "Error budget burn rate, 1 hour",
+      "gridPos": { "x": 8, "y": 0, "w": 8, "h": 5 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "refId": "A", "expr": "crm_api:error_ratio:rate1h / 0.005" }],
+      "fieldConfig": { "defaults": { "unit": "none", "decimals": 1 } }
+    },
+    {
+      "type": "stat",
+      "title": "Ready API pods",
+      "gridPos": { "x": 16, "y": 0, "w": 8, "h": 5 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "refId": "A", "expr": "sum(up{job=\"crm-api\"})" }]
+    },
+    {
+      "type": "timeseries",
+      "title": "Requests per second by route",
+      "gridPos": { "x": 0, "y": 5, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "refId": "A", "legendFormat": "{{route}}", "expr": "sum by (route) (rate(http_request_duration_seconds_count{job=\"crm-api\"}[5m]))" }],
+      "fieldConfig": { "defaults": { "unit": "reqps" } }
+    },
+    {
+      "type": "timeseries",
+      "title": "Error ratio (5xx), 5 minutes and 1 hour",
+      "gridPos": { "x": 12, "y": 5, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "refId": "A", "legendFormat": "5m", "expr": "crm_api:error_ratio:rate5m" },
+        { "refId": "B", "legendFormat": "1h", "expr": "crm_api:error_ratio:rate1h" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "percentunit" } }
+    },
+    {
+      "type": "timeseries",
+      "title": "p95 latency by route",
+      "gridPos": { "x": 0, "y": 13, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "refId": "A", "legendFormat": "{{route}}", "expr": "histogram_quantile(0.95, sum by (le, route) (rate(http_request_duration_seconds_bucket{job=\"crm-api\"}[5m])))" }],
+      "fieldConfig": { "defaults": { "unit": "s" } }
+    },
+    {
+      "type": "timeseries",
+      "title": "API pod memory (working set)",
+      "gridPos": { "x": 12, "y": 13, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "refId": "A", "legendFormat": "{{pod}}", "expr": "sum by (pod) (container_memory_working_set_bytes{namespace=\"crm\",container=\"api\"})" }],
+      "fieldConfig": { "defaults": { "unit": "bytes" } }
+    }
+  ]
+}
