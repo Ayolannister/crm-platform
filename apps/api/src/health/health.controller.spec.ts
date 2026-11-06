@@ -24,3 +24,11 @@
         await expect(new HealthController(fakePool(false)).ready()).rejects.toThrow();
       });
     });
+describe('HealthController readiness deadline', () => {
+  it('reports not ready quickly when the database hangs', async () => {
+    const hangingPool = { query: () => new Promise(() => {}) } as unknown as pg.Pool;
+    const started = Date.now();
+    await expect(new HealthController(hangingPool).ready()).rejects.toThrow();
+    expect(Date.now() - started).toBeLessThan(1000);
+  });
+});
