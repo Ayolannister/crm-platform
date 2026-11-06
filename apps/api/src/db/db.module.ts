@@ -13,7 +13,12 @@ const logger = new Logger('PgPool');
 // the pool emits 'error'. Without a listener, Node.js treats that as fatal and the
 // whole API crashes. With one, the pool simply opens fresh connections later.
 export function createPool(connectionString: string | undefined): pg.Pool {
-  const pool = new pg.Pool({ connectionString, max: 10 });
+  const pool = new pg.Pool({
+    connectionString,
+    max: 10,
+    // Fail fast instead of hanging forever when the database is unreachable.
+    connectionTimeoutMillis: 3000,
+  });
   pool.on('error', (err) => {
     logger.warn(`Idle database connection lost: ${err.message}`);
   });

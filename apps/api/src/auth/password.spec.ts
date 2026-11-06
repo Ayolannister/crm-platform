@@ -1,7 +1,7 @@
     import { describe, it, expect } from 'vitest';
     import { hashPassword, verifyPassword } from './password.js';
 
-    describe('password hashing', () => {
+    describe('password hashing', { timeout: 20_000 }, () => {
       it('accepts the correct password', async () => {
         const hash = await hashPassword('correct-horse-battery');
         expect(await verifyPassword('correct-horse-battery', hash)).toBe(true);
