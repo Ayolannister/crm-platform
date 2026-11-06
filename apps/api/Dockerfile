@@ -29,4 +29,4 @@
    ENV GIT_SHA=$GIT_SHA
    USER node
    EXPOSE 3000
-   CMD ["node", "dist/main.js"]
+CMD ["node", "--import", "./dist/instrumentation.js", "dist/main.js"]
