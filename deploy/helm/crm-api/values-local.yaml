@@ -1,2 +1,10 @@
 image:
   digest: sha256:a85ddfa86bba4c484abc23f40461289762f368e1a242f35928fbfe06eee6a183
+
+metrics:
+  serviceMonitor:
+    enabled: true
+  prometheusRule:
+    enabled: true
+  dashboard:
+    enabled: true

@@ -1,0 +1,68 @@
+{{- if .Values.metrics.prometheusRule.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ include "crm-api.fullname" . }}
+  labels:
+    {{- include "crm-api.labels" . | nindent 4 }}
+spec:
+  groups:
+    # SLI: share of user requests that failed (5xx). Health checks are excluded:
+    # they measure the platform, not what users experience.
+    - name: crm-api.sli
+      rules:
+        - record: crm_api:error_ratio:rate5m
+          expr: |
+            (sum(rate(http_request_duration_seconds_count{job="crm-api",route!~"/health/.*",status=~"5.."}[5m])) or vector(0))
+            /
+            clamp_min(sum(rate(http_request_duration_seconds_count{job="crm-api",route!~"/health/.*"}[5m])), 1e-9)
+        - record: crm_api:error_ratio:rate30m
+          expr: |
+            (sum(rate(http_request_duration_seconds_count{job="crm-api",route!~"/health/.*",status=~"5.."}[30m])) or vector(0))
+            /
+            clamp_min(sum(rate(http_request_duration_seconds_count{job="crm-api",route!~"/health/.*"}[30m])), 1e-9)
+        - record: crm_api:error_ratio:rate1h
+          expr: |
+            (sum(rate(http_request_duration_seconds_count{job="crm-api",route!~"/health/.*",status=~"5.."}[1h])) or vector(0))
+            /
+            clamp_min(sum(rate(http_request_duration_seconds_count{job="crm-api",route!~"/health/.*"}[1h])), 1e-9)
+        - record: crm_api:error_ratio:rate6h
+          expr: |
+            (sum(rate(http_request_duration_seconds_count{job="crm-api",route!~"/health/.*",status=~"5.."}[6h])) or vector(0))
+            /
+            clamp_min(sum(rate(http_request_duration_seconds_count{job="crm-api",route!~"/health/.*"}[6h])), 1e-9)
+    # SLO: 99.5% availability, so the error budget is 0.5% (0.005).
+    - name: crm-api.alerts
+      rules:
+        - alert: CrmApiDown
+          expr: absent(up{job="crm-api"} == 1)
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: No CRM API instance is up
+            runbook_url: https://github.com/Ayolannister/crm-platform/blob/main/docs/runbooks/api-down.md
+        - alert: CrmApiErrorBudgetFastBurn
+          expr: crm_api:error_ratio:rate1h > (14.4 * 0.005) and crm_api:error_ratio:rate5m > (14.4 * 0.005)
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: CRM API is burning its error budget fast
+            runbook_url: https://github.com/Ayolannister/crm-platform/blob/main/docs/runbooks/error-budget-burn.md
+        - alert: CrmApiErrorBudgetSlowBurn
+          expr: crm_api:error_ratio:rate6h > (6 * 0.005) and crm_api:error_ratio:rate30m > (6 * 0.005)
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: CRM API is burning its error budget steadily
+            runbook_url: https://github.com/Ayolannister/crm-platform/blob/main/docs/runbooks/error-budget-burn.md
+        - alert: CrmApiHighLatency
+          expr: histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{job="crm-api",route!~"/health/.*|/auth/.*"}[5m]))) > 0.5
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: CRM API p95 latency is above 500 ms
+{{- end }}
