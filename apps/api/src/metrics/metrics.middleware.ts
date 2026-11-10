@@ -1,15 +1,56 @@
+import { Logger } from '@nestjs/common';
+import { trace, context } from '@opentelemetry/api';
 import type { NextFunction, Request, Response } from 'express';
+import { performance } from 'node:perf_hooks';
 import { httpRequestDuration } from './metrics.js';
 
-// Times every request and records it once the response is fully sent,
-// so the status includes errors handled by exception filters.
-export function metricsMiddleware(req: Request, res: Response, next: NextFunction) {
+const logger = new Logger('HTTP');
+
+export function metricsMiddleware(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
   if (req.path === '/metrics') return next();
-  const end = httpRequestDuration.startTimer({ method: req.method });
-  res.on('finish', () => {
-    // The route template (e.g. /contacts/:id), never the raw path: keeps cardinality bounded.
-    const route = req.route?.path ? `${req.baseUrl}${req.route.path}` : 'unmatched';
-    end({ route, status: String(res.statusCode) });
+
+  const start = performance.now();
+
+  const end = httpRequestDuration.startTimer({
+    method: req.method,
   });
+
+  // Capture the active trace context while handling the request.
+  const spanContext = trace.getSpanContext(context.active());
+
+  const traceId = spanContext?.traceId;
+
+  res.on('finish', () => {
+    const route = req.route?.path
+      ? `${req.baseUrl}${req.route.path}`
+      : 'unmatched';
+
+    const statusCode = res.statusCode;
+
+    const durationMs = Number(
+      (performance.now() - start).toFixed(2),
+    );
+
+    // Preserve existing Prometheus metrics.
+    end({
+      route,
+      status: String(statusCode),
+    });
+
+    // Structured HTTP request log.
+    logger.log({
+      message: 'HTTP request completed',
+      method: req.method,
+      route,
+      statusCode,
+      durationMs,
+      ...(traceId ? { traceId } : {}),
+    });
+  });
+
   next();
 }
