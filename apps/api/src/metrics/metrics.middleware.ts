@@ -1,6 +1,6 @@
 import { Logger } from '@nestjs/common';
-import { trace, context } from '@opentelemetry/api';
 import type { NextFunction, Request, Response } from 'express';
+import { trace, context, isSpanContextValid } from '@opentelemetry/api';
 import { performance } from 'node:perf_hooks';
 import { httpRequestDuration } from './metrics.js';
 
@@ -20,9 +20,12 @@ export function metricsMiddleware(
   });
 
   // Capture the active trace context while handling the request.
-  const spanContext = trace.getSpanContext(context.active());
+const spanContext = trace.getSpanContext(context.active());
 
-  const traceId = spanContext?.traceId;
+const traceId =
+  spanContext && isSpanContextValid(spanContext)
+    ? spanContext.traceId
+    : undefined;
 
   res.on('finish', () => {
     const route = req.route?.path
