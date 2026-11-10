@@ -7,3 +7,6 @@ metrics:
     enabled: true
   dashboard:
     enabled: true
+config:
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://alloy.observability.svc:4318
+  OTEL_SERVICE_NAME: crm-api
