@@ -27,6 +27,26 @@ env:
   TERRAFORM_VERSION: "1.15.8"
 
 jobs:
+  changes:
+    name: Detect API changes
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      api: ${{ steps.filter.outputs.api }}
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v5
+
+      - name: Detect changed files
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            api:
+              - 'apps/api/**'
+
   terraform:
     name: Terraform checks
     runs-on: ubuntu-latest
@@ -119,13 +139,12 @@ jobs:
         run: >
           helm template crm-api deploy/helm/crm-api -n crm -f deploy/helm/crm-api/values-local.yaml
           | docker run --rm -i ghcr.io/yannh/kubeconform:${{ env.KUBECONFORM_VERSION }} -strict -summary -schema-location default -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' -
-              
+
       - name: Validate rendered chart (aws-dev)
         run: >
           helm template crm-api deploy/helm/crm-api -n crm -f deploy/helm/crm-api/values-aws-dev.yaml
           | docker run --rm -i ghcr.io/yannh/kubeconform:${{ env.KUBECONFORM_VERSION }} -strict -summary -schema-location default -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' -
 
-        
       - name: Validate local dependency manifests
         run: >
           docker run --rm -v "$PWD:/work"
@@ -133,13 +152,15 @@ jobs:
 
   image:
     name: Build, scan and publish image
-    needs: [test, secrets]
+    needs: [changes, test, secrets]
+    # Keep image validation on PRs; on main, build/publish only for API changes.
+    if: github.event_name == 'pull_request' || needs.changes.outputs.api == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
     env:
-      PUBLISH: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+      PUBLISH: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.changes.outputs.api == 'true' }}
     outputs:
       image: ${{ steps.push.outputs.image }}
       tag: ${{ steps.push.outputs.tag }}
@@ -212,7 +233,8 @@ jobs:
   release-local:
     name: Open local release PR
     needs: image
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    # Avoid opening an empty release PR if image publishing was skipped.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.image.result == 'success' && needs.image.outputs.digest != ''
     runs-on: ubuntu-latest
     steps:
       - name: Get a short-lived bot token
