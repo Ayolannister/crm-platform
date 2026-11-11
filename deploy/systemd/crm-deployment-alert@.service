@@ -1,0 +1,6 @@
+[Unit]
+Description=CRM deployment failure notification for %i
+
+[Service]
+Type=oneshot
+ExecStart=%h/crm-platform/scripts/notify-deployment-failure.sh %i

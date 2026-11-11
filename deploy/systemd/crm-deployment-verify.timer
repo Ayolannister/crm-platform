@@ -1,0 +1,11 @@
+[Unit]
+Description=Run CRM deployment verification every 15 minutes
+
+[Timer]
+OnStartupSec=2min
+OnUnitInactiveSec=15min
+AccuracySec=1min
+Unit=crm-deployment-verify.service
+
+[Install]
+WantedBy=timers.target
