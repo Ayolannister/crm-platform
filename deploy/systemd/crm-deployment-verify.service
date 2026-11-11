@@ -1,0 +1,10 @@
+[Unit]
+Description=Verify CRM API deployment on Floci EKS
+OnFailure=crm-deployment-alert@%n.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/crm-platform
+Environment="PATH=/usr/local/bin:/usr/bin:/bin:/snap/bin"
+ExecStart=%h/crm-platform/scripts/verify-aws-dev.sh
+TimeoutStartSec=240
