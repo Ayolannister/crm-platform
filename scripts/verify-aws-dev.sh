@@ -6,8 +6,8 @@ CONTEXT="floci-crm-dev"
 NAMESPACE="crm"
 DEPLOYMENT="crm-api"
 ARGOCD_APP="crm-api-aws-dev"
-EXPECTED_IMAGE="ghcr.io/ayolannister/crm-api@sha256:205e9bdb3be4657d0af4f3feacb27d2310307efe7f44331b6c407c1ca53600f8"
-
+# Derive the expected image from the Git revision deployed by Argo CD.
+EXPECTED_IMAGE=""
 # Use a dedicated local port for verification.
 LOCAL_PORT=13000
 
@@ -76,6 +76,63 @@ HEALTH_STATUS=$(kubectl --context "$CONTEXT" \
   || fail "Argo CD application unhealthy: $HEALTH_STATUS"
 
 pass "Argo CD application is healthy"
+# --------------------------------------
+# 3a. Verify Git revision and expected image
+# --------------------------------------
+
+log "Checking deployed Git revision..."
+
+git fetch --quiet origin main \
+  || fail "Could not fetch the latest main branch"
+
+ARGO_REVISION=$(kubectl --context "$CONTEXT" \
+  get application "$ARGOCD_APP" \
+  -n argocd \
+  -o jsonpath='{.status.sync.revision}')
+
+MAIN_REVISION=$(git rev-parse refs/remotes/origin/main)
+
+[[ "$ARGO_REVISION" == "$MAIN_REVISION" ]] \
+  || fail "Argo CD has not deployed the latest main revision"
+
+pass "Argo CD matches the latest main revision"
+
+log "Rendering expected deployment from Git..."
+
+TEMP_CHART_DIR=$(mktemp -d)
+
+# Remove temporary files when the script exits.
+cleanup_chart() {
+  rm -rf "$TEMP_CHART_DIR"
+}
+
+trap 'cleanup; cleanup_chart' EXIT
+
+git archive "$ARGO_REVISION" deploy/helm/crm-api \
+  | tar -x -C "$TEMP_CHART_DIR" \
+  || fail "Could not retrieve Helm chart from deployed revision"
+
+CHART_DIR="$TEMP_CHART_DIR/deploy/helm/crm-api"
+
+EXPECTED_IMAGE=$(helm template crm-api "$CHART_DIR" \
+  --namespace "$NAMESPACE" \
+  -f "$CHART_DIR/values-aws-dev.yaml" \
+  | yq -r '
+      select(.kind == "Deployment" and .metadata.name == "crm-api")
+      | .spec.template.spec.containers[]
+      | select(.name == "api")
+      | .image
+    ')
+
+[[ -n "$EXPECTED_IMAGE" && "$EXPECTED_IMAGE" != "null" ]] \
+  || fail "Could not determine expected image"
+
+[[ "$EXPECTED_IMAGE" == *@sha256:* ]] \
+  || fail "Expected image is not pinned by SHA256 digest"
+
+pass "Expected image retrieved from deployed Git revision"
+
+echo "[INFO] Expected image: $EXPECTED_IMAGE"
 
 # --------------------------------------
 # 4. Kubernetes rollout
@@ -186,16 +243,6 @@ if [[ "$LIVE_OK" != "true" || "$READY_OK" != "true" ]]; then
 fi
 
 pass "Liveness endpoint returned HTTP 2xx"
-pass "Readiness endpoint returned HTTP 2xx"
-
-[[ "$LIVE_OK" == "true" ]] \
-  || fail "Liveness endpoint failed"
-
-pass "Liveness endpoint returned HTTP 2xx"
-
-[[ "$READY_OK" == "true" ]] \
-  || fail "Readiness endpoint failed"
-
 pass "Readiness endpoint returned HTTP 2xx"
 
 echo
