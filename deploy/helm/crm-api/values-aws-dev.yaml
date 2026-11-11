@@ -2,8 +2,8 @@
 replicaCount: 1   # one small node; a PDB of minAvailable 1 would block node maintenance
 
 image:
-  repository: localhost:5100/000000000000/us-east-1/crm-api   # ECR, path style (Floci)
-  digest: sha256:a7fc6d0e4799b331c21ff66ea0519838de08340ca1b3f8bbbf8682304463a727
+  repository: ghcr.io/ayolannister/crm-api
+  digest: sha256:205e9bdb3be4657d0af4f3feacb27d2310307efe7f44331b6c407c1ca53600f8
 
 config:
   NODE_ENV: production
