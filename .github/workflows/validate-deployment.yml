@@ -1,0 +1,71 @@
+name: Validate CRM Deployment
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "deploy/helm/crm-api/**"
+      - ".github/workflows/validate-deployment.yml"
+
+  push:
+    branches:
+      - main
+    paths:
+      - "deploy/helm/crm-api/**"
+      - ".github/workflows/validate-deployment.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate-helm:
+    name: Validate Helm Deployment
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+
+      - name: Lint AWS dev Helm chart
+        run: |
+          helm lint deploy/helm/crm-api \
+            -f deploy/helm/crm-api/values-aws-dev.yaml
+
+      - name: Render AWS dev manifests
+        run: |
+          helm template crm-api deploy/helm/crm-api \
+            --namespace crm \
+            -f deploy/helm/crm-api/values-aws-dev.yaml \
+            > /tmp/crm-aws-dev.yaml
+
+      - name: Verify immutable CRM API image
+        run: |
+          python3 - <<'PY'
+          import re
+          import sys
+          from pathlib import Path
+
+          manifest = Path("/tmp/crm-aws-dev.yaml").read_text()
+
+          pattern = (
+              r'ghcr\.io/ayolannister/crm-api'
+              r'@sha256:[0-9a-f]{64}'
+          )
+
+          images = re.findall(pattern, manifest)
+
+          if not images:
+              print("FAIL: No digest-pinned CRM API image found")
+              sys.exit(1)
+
+          if len(set(images)) != 1:
+              print("FAIL: Multiple CRM API image digests detected")
+              sys.exit(1)
+
+          print(f"PASS: Immutable CRM API image: {images[0]}")
+          PY
+
