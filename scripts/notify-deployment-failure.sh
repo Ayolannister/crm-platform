@@ -4,7 +4,7 @@ set -euo pipefail
 
 SERVICE="${1:-crm-deployment-verify.service}"
 
-MESSAGE="CRM deployment verification failed: $SERVICE"
+MESSAGE="CRM operation failed: $SERVICE"
 
 echo "[ALERT] $MESSAGE"
 

@@ -1,0 +1,11 @@
+[Unit]
+Description=Backup CRM PostgreSQL Database
+OnFailure=crm-deployment-alert@%n.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/crm-platform
+Environment="PATH=/usr/local/bin:/usr/bin:/bin:/snap/bin"
+Environment="DOCKER_HOST=unix:///var/run/docker.sock"
+ExecStart=%h/crm-platform/scripts/backup-postgres.sh
+TimeoutStartSec=600
