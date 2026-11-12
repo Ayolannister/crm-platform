@@ -7,5 +7,6 @@ Type=oneshot
 WorkingDirectory=%h/crm-platform
 Environment="PATH=/usr/local/bin:/usr/bin:/bin:/snap/bin"
 Environment="DOCKER_HOST=unix:///var/run/docker.sock"
-ExecStart=%h/crm-platform/scripts/backup-postgres.sh
+Environment="RETENTION_DRY_RUN=true"
+ExecStart=%h/crm-platform/scripts/backup-postgres-to-s3.sh
 TimeoutStartSec=600
