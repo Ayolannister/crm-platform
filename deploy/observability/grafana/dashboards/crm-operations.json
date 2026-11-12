@@ -686,7 +686,7 @@
     ]
   },
   "timezone": "browser",
-  "title": "CRM Platform — Operations Dashboard 1",
-  "uid": "addq675",
+  "title": "CRM Platform - Operations Dashboard (GitOps)",
+  "uid": "crm-ops-gitops",
   "version": 0
 }
