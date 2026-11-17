@@ -1,8 +1,9 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #090909;
+  --foreground: #f5f5f5;
+  color-scheme: dark;
 }
 
 @theme inline {
@@ -12,15 +13,29 @@
   --font-mono: monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
 body {
+  min-height: 100vh;
+  margin: 0;
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
+::selection { background: #b9ff45; color: #111; }
+button, a, input { transition: border-color .18s ease, background-color .18s ease, color .18s ease, transform .18s ease; }
+button { cursor: pointer; }
+button:disabled { cursor: not-allowed; }
+:focus-visible { outline: 2px solid #b9ff45; outline-offset: 3px; }
+.inf-card { border: 1px solid #303030; border-radius: 26px; background: #171717; }
+.inf-input { display: block; width: 100%; border: 1px solid #353535; border-radius: 13px; background: #1e1e1e; color: #fafafa; padding: 13px 15px; font-size: 14px; outline: none; }
+.inf-input:focus { border-color: #b9ff45; box-shadow: 0 0 0 3px #b9ff451c; }
+.inf-input::placeholder { color: #777; }
+.inf-btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; border: 1px solid #b9ff45; border-radius: 13px; background: #b9ff45; color: #111; padding: 12px 19px; font-size: 13px; font-weight: 700; }
+.inf-btn:hover { background: #caff74; transform: translateY(-1px); }
+.inf-btn-secondary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid #404040; border-radius: 13px; background: #202020; color: white; padding: 12px 18px; font-size: 13px; font-weight: 600; }
+.inf-btn-secondary:hover, .inf-icon-button:hover { border-color: #888; background: #272727; }
+.inf-icon-button { display: inline-flex; align-items: center; justify-content: center; height: 38px; min-width: 38px; border: 1px solid #383838; border-radius: 11px; background: #202020; color: #c9c9c9; }
+.inf-tag-success { display: inline-flex; border-radius: 999px; background: #b9ff451c; color: #b9ff45; padding: 6px 10px; font-size: 11px; font-weight: 600; }
+.inf-tag-muted { display: inline-flex; border-radius: 999px; background: #ffffff0d; color: #999; padding: 6px 10px; font-size: 11px; font-weight: 600; }

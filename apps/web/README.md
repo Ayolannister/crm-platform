@@ -1,36 +1,38 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Infiniti web app
 
-## Getting Started
+Infiniti's frontend is built with Next.js 16, React 19, Tailwind CSS, TypeScript, and Lucide icons.
 
-First, run the development server:
+**For complete setup from a fresh clone**—including Git, Docker/Compose, Node.js, the NestJS API, PostgreSQL, Redis, environment variables, testing, and contribution instructions—read the [repository README](../../README.md).
+
+## Frontend quick start
+
+Start the API and database from the repository root first, as described in the main README.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cd apps/web
+npm ci
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Create `.env.local`:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```dotenv
+CRM_API_URL=http://127.0.0.1:3000
+CRM_WEB_ORIGIN=http://localhost:3001
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Then:
 
-## Learn More
+```bash
+npm run dev -- -p 3001
+```
 
-To learn more about Next.js, take a look at the following resources:
+Open <http://localhost:3001>. For local testing, this origin must match `CRM_WEB_ORIGIN`. No API URL or secret should be hardcoded into frontend source.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Checks
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm run lint
+npm run build
+```
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+For infrastructure, E2E testing, optional Kind/Argo CD deployment, contribution instructions, and production limitations, see the [main README](../../README.md).
