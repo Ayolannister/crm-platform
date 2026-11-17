@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: web
-          image: crm-web:origin-fix
+          image: crm-web:crud-fix
           imagePullPolicy: Never
           ports:
             - containerPort: 3000
