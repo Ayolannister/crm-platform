@@ -3,9 +3,9 @@
 import { FormEvent, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  Activity, ArrowDownRight, ArrowUpRight, BarChart3, Check, ChevronRight,
-  CircleHelp, Command, LayoutDashboard, LogOut, Mail, Menu, MoreHorizontal,
-  Pencil, Phone, Plus, Search, Settings, ShieldCheck, Sparkles, Trash2, Users, X
+  ArrowUpRight, BarChart3, Check, ChevronRight,
+  LayoutDashboard, LogOut, Mail, Menu,
+  Pencil, Phone, Plus, Search, Settings, ShieldCheck, Trash2, Users, X
 } from 'lucide-react';
 
 type Contact = { id?: string; firstName: string; lastName?: string | null; email?: string | null; phone?: string | null };
