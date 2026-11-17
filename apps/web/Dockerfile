@@ -1,5 +1,6 @@
 # syntax=docker/dockerfile:1
 FROM node:24-alpine AS deps
+RUN npm install -g npm@latest
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
@@ -7,6 +8,7 @@ FROM deps AS build
 COPY . .
 RUN npm run build
 FROM node:24-alpine AS runtime
+# Remove package managers not needed by the standalone Next.js server.
 RUN rm -rf /usr/local/lib/node_modules/npm \
     /usr/local/lib/node_modules/corepack \
     /usr/local/bin/npm \
