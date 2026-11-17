@@ -13,7 +13,7 @@ export async function POST(request: NextRequest, context: Context) {
 
   // Prevent cross-origin form submissions.
   const origin = request.headers.get("origin");
-  if (origin && origin !== request.nextUrl.origin) {
+  if (origin && origin !== (process.env.CRM_WEB_ORIGIN ?? request.nextUrl.origin)) {
     return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }
 
