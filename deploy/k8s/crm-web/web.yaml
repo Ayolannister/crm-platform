@@ -15,8 +15,8 @@ spec:
     spec:
       containers:
         - name: web
-          image: crm-web:crud-fix
-          imagePullPolicy: Never
+          image: ghcr.io/ayolannister/crm-web@sha256:63ac0da0ff68d69fe069e4cf87c23f73b46f6fd038f80587e2d70f9632cd1aaf
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
           env:
