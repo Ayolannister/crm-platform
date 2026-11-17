@@ -1,11 +1,11 @@
 'use client';
 
-import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  ArrowUpRight, BarChart3, Check, ChevronRight,
-  LayoutDashboard, LogOut, Mail, Menu,
-  Pencil, Phone, Plus, Search, Settings, ShieldCheck, Trash2, Users, X
+  ArrowUpRight, BarChart3, Check, ChevronRight, Download, FileDown, KeyRound,
+  LayoutDashboard, LogOut, Mail, Menu, Database, LockKeyhole,
+  Pencil, Phone, Plus, Search, Settings, ShieldCheck, SlidersHorizontal, Trash2, Users, X
 } from 'lucide-react';
 
 type Contact = { id?: string; firstName: string; lastName?: string | null; email?: string | null; phone?: string | null };
@@ -24,6 +24,39 @@ export default function ContactsView({ initialContacts, error }: { initialContac
   const [saving, setSaving] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [compactRows, setCompactRows] = useState(false);
+  useEffect(() => {
+    setCompactRows(window.localStorage.getItem('infiniti-compact-rows') === 'true');
+  }, []);
+  function toggleCompactRows() {
+    setCompactRows(value => {
+      window.localStorage.setItem('infiniti-compact-rows', String(!value));
+      return !value;
+    });
+  }
+  function exportContacts() {
+    if (!initialContacts.length) return;
+    const safe = (value: string | null | undefined) => {
+      const str = value ?? '';
+      // Defuse spreadsheet formulas and escape RFC-4180 CSV fields.
+      const escaped = /^[\s]*[=+@\-\t\r]/.test(str) ? "'" + str : str;
+      return '"' + escaped.replace(/"/g, '""') + '"';
+    };
+    const rows = [
+      ['First name', 'Last name', 'Email', 'Phone'],
+      ...initialContacts.map(c => [c.firstName, c.lastName, c.email, c.phone])
+    ];
+    const csv = rows.map(row => row.map(safe).join(',')).join('\r\n');
+    const url = URL.createObjectURL(new Blob(['\uFEFF', csv], {type: 'text/csv;charset=utf-8'}));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'infiniti-contacts.csv';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    setMessage('Your contacts have been exported.');
+  }
 
   const contacts = useMemo(() => initialContacts.filter(c =>
     [c.firstName, c.lastName, c.email, c.phone].join(' ').toLowerCase().includes(query.trim().toLowerCase())
@@ -122,13 +155,13 @@ export default function ContactsView({ initialContacts, error }: { initialContac
           <span className="mb-4 rounded-2xl bg-lime-400/10 p-4 text-lime-300"><Users size={26} /></span>
           <h3 className="font-semibold text-white">{query ? 'No matching contacts' : 'Your network starts here'}</h3>
           <p className="mt-2 max-w-xs text-sm text-zinc-500">{query ? 'Try a different name, email or phone number.' : 'Add your first contact to build your workspace.'}</p>
-          {!query && <button className="inf-btn mt-6" onClick={showCreate}><Plus size={17} /> Add contact</button>}
+          {!query && <button className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#b9ff45] px-5 py-3 text-sm font-bold text-[#101010] shadow-[0_8px_24px_rgba(185,255,69,0.12)] transition hover:bg-[#d0ff7f]" onClick={showCreate}><Plus size={18} strokeWidth={2.5} /> Add your first contact</button>}
         </div> :
         <div className="overflow-x-auto">
           <table className="w-full min-w-150 text-left text-sm">
             <thead><tr className="text-xs uppercase tracking-widest text-zinc-500"><th className="px-6 py-4 font-medium">Contact</th><th className="py-4 font-medium">Email</th><th className="py-4 font-medium">Phone</th><th className="py-4 font-medium">Profile</th><th className="py-4 pr-6 text-right font-medium">Actions</th></tr></thead>
             <tbody>{contacts.map((c, i) => <tr key={c.id ?? i} className="border-t border-white/7 transition-colors hover:bg-white/4">
-              <td className="px-6 py-4"><div className="flex items-center gap-3"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-lime-400/10 text-xs font-bold text-lime-300">{initials(c)}</span><span className="font-medium text-zinc-100">{fullName(c)}</span></div></td>
+              <td className={compactRows ? 'px-6 py-2' : 'px-6 py-4'}><div className="flex items-center gap-3"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-lime-400/10 text-xs font-bold text-lime-300">{initials(c)}</span><span className="font-medium text-zinc-100">{fullName(c)}</span></div></td>
               <td className="pr-5 text-zinc-400">{c.email || '—'}</td><td className="pr-5 text-zinc-400">{c.phone || '—'}</td>
               <td><span className={c.email && c.phone ? 'inf-tag-success' : 'inf-tag-muted'}>{c.email && c.phone ? 'Complete' : 'Partial'}</span></td>
               <td className="space-x-2 whitespace-nowrap py-3 pr-6 text-right">
@@ -153,7 +186,7 @@ export default function ContactsView({ initialContacts, error }: { initialContac
         <nav className="mt-4 space-y-1" aria-label="Main navigation">
           {navigation.map(item => <button key={item.id} onClick={() => go(item.id)} aria-current={view === item.id ? 'page' : undefined}
             className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm transition-all ${view === item.id ? 'bg-[#b9ff45] font-semibold text-[#111]' : 'text-zinc-400 hover:bg-white/6 hover:text-white'}`}>
-            <item.icon size={18}/>{item.name}{item.id === 'settings' && <span className="ml-auto rounded-md bg-white/8 px-1.5 py-0.5 text-[9px] text-zinc-400">Soon</span>}
+            <item.icon size={18}/>{item.name}
           </button>)}
         </nav>
         <div className="mt-auto">
@@ -179,7 +212,12 @@ export default function ContactsView({ initialContacts, error }: { initialContac
           <div><p className="mb-2 text-xs font-semibold uppercase tracking-[0.22em] text-[#b9ff45]">Infiniti / {view}</p>
             <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">{view === 'overview' ? 'Your network, in focus.' : view === 'contacts' ? 'Your contacts' : view === 'analytics' ? 'Workspace analytics' : 'Settings'}</h1>
             <p className="mt-2 text-sm text-zinc-500">{view === 'overview' ? 'A clearer view of the relationships you are building.' : view === 'contacts' ? 'Every relationship, all in one place.' : view === 'analytics' ? 'Insights from your real contact data.' : 'Workspace preferences and configuration.'}</p></div>
-          {view !== 'settings' && <button className="inf-btn" onClick={showCreate}><Plus size={18}/> Add contact <ArrowUpRight size={16}/></button>}
+          {view !== 'settings' && <button
+            type="button" onClick={showCreate}
+            className="inline-flex min-h-12 shrink-0 items-center justify-center gap-3 rounded-2xl border border-[#b9ff45] bg-[#b9ff45] px-5 py-3 text-sm font-bold text-[#101010] shadow-[0_8px_24px_rgba(185,255,69,0.18)] transition hover:-translate-y-0.5 hover:bg-[#d0ff7f] focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[#b9ff45]">
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-black/10"><Plus size={18} strokeWidth={2.7} aria-hidden="true"/></span>
+            New contact
+          </button>
         </div>
         {message && !mode && <div role="status" className="mb-5 flex items-center gap-3 rounded-xl border border-[#b9ff45]/25 bg-[#b9ff45]/8 px-4 py-3 text-sm text-lime-200"><Check size={17}/>{message}<button className="ml-auto" aria-label="Dismiss notice" onClick={() => setMessage('')}><X size={16}/></button></div>}
 
@@ -236,18 +274,91 @@ export default function ContactsView({ initialContacts, error }: { initialContac
             <p className="mt-8 text-xs text-zinc-500">Computed from current contacts. Historical trends are not available from the API.</p></div>
           <div className="inf-card p-7"><p className="text-sm text-zinc-400">Organization data</p><h2 className="mt-2 text-2xl font-semibold">Quality overview</h2><div className="mt-12 flex items-center justify-center"><div className="flex h-48 w-48 flex-col items-center justify-center rounded-full border-14 border-[#b9ff45] bg-[#b9ff45]/6"><span className="text-4xl font-semibold">{completeness}%</span><span className="mt-2 text-xs text-zinc-500">Complete profiles</span></div></div></div>
         </div>}
-        {view === 'settings' && <section className="inf-card max-w-2xl p-10"><span className="inline-flex rounded-xl bg-[#b9ff45]/10 p-4 text-[#b9ff45]"><Settings size={28}/></span><h2 className="mt-6 text-2xl font-semibold text-white">Settings coming soon</h2><p className="mt-3 max-w-lg text-sm leading-7 text-zinc-400">Your workspace is ready to use. Organization and account settings are not yet available in the current API, so no changes can be made here.</p></section>}
+        {view === 'settings' && <div className="grid max-w-5xl gap-5">
+          <section className="rounded-[26px] border border-white/12 bg-[#171717] p-6 sm:p-8">
+            <div className="mb-7 flex items-center gap-3"><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#b9ff45]/12 text-[#b9ff45]"><Database size={22}/></span>
+              <div><h2 className="text-xl font-semibold text-white">Your data</h2><p className="mt-1 text-xs text-zinc-500">Manage the contacts in your workspace</p></div></div>
+            <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-white/10 bg-[#202020] p-5">
+              <div><p className="text-sm font-semibold text-white">Export contacts to CSV</p><p className="mt-2 max-w-md text-xs leading-5 text-zinc-400">Download your {total} current contacts with name, email and phone. Suitable for spreadsheets and backups.</p></div>
+              <button type="button" onClick={exportContacts} disabled={!total}
+                className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#b9ff45] px-4 py-2.5 text-sm font-semibold text-[#111] transition hover:bg-[#d0ff7f] disabled:cursor-not-allowed disabled:opacity-40"><Download size={17}/> Export CSV</button>
+            </div>
+          </section>
+          <section className="rounded-[26px] border border-white/12 bg-[#171717] p-6 sm:p-8">
+            <div className="mb-7 flex items-center gap-3"><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#b9ff45]/12 text-[#b9ff45]"><SlidersHorizontal size={22}/></span>
+              <div><h2 className="text-xl font-semibold text-white">Display preferences</h2><p className="mt-1 text-xs text-zinc-500">Saved in this browser</p></div></div>
+            <label className="flex cursor-pointer items-center justify-between gap-5 rounded-2xl border border-white/10 bg-[#202020] p-5">
+              <span><span className="block text-sm font-semibold text-white">Compact contacts table</span><span className="mt-2 block text-xs text-zinc-400">Use tighter spacing to fit more contacts on screen.</span></span>
+              <span className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors ${compactRows ? 'bg-[#b9ff45]' : 'bg-zinc-600'}`}>
+                <input type="checkbox" checked={compactRows} onChange={toggleCompactRows} className="peer sr-only" aria-label="Compact contacts table"/>
+                <span className={`pointer-events-none ml-1 block h-5 w-5 rounded-full bg-[#141414] transition-transform ${compactRows ? 'translate-x-5' : ''}`}/>
+              </span>
+            </label>
+          </section>
+          <section className="rounded-[26px] border border-white/12 bg-[#171717] p-6 sm:p-8">
+            <div className="mb-7 flex items-center gap-3"><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#b9ff45]/12 text-[#b9ff45]"><LockKeyhole size={22}/></span>
+              <div><h2 className="text-xl font-semibold text-white">Security & session</h2><p className="mt-1 text-xs text-zinc-500">Current workspace security</p></div></div>
+            <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-white/10 bg-[#202020] p-5">
+              <div className="flex items-start gap-3"><ShieldCheck size={20} className="mt-0.5 text-[#b9ff45]"/><div><p className="text-sm font-semibold text-white">Organization-isolated contacts</p><p className="mt-2 max-w-lg text-xs leading-5 text-zinc-400">The API scopes contact reads and changes to your organization. Sessions use an HTTP-only cookie with a short-lived token.</p></div></div>
+              <button type="button" onClick={logout} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/15 bg-white/6 px-4 text-sm font-semibold text-white hover:border-white/30"><LogOut size={17}/> Sign out</button>
+            </div>
+          </section>
+          <section className="rounded-[26px] border border-white/12 bg-[#171717] p-6 sm:p-8">
+            <div className="mb-7 flex items-center gap-3"><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#b9ff45]/12 text-[#b9ff45]"><KeyRound size={22}/></span>
+              <div><h2 className="text-xl font-semibold text-white">Developer & organization settings</h2><p className="mt-1 text-xs text-zinc-500">Planned integrations · no API endpoints available yet</p></div></div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {[['API keys & scopes', 'Create and rotate scoped API credentials'],['Webhooks', 'Receive secure contact event notifications'],['Organization & members', 'Manage roles and team invitations'],['Audit history', 'Review who changed contacts and when']].map(([title,description]) =>
+                <div className="rounded-2xl border border-white/8 bg-[#202020] p-5" key={title}>
+                  <span className="inline-flex rounded-full border border-white/10 px-2.5 py-1 text-[10px] font-medium text-zinc-400">Coming soon</span>
+                  <p className="mt-4 text-sm font-semibold text-zinc-200">{title}</p><p className="mt-2 text-xs leading-5 text-zinc-500">{description}</p>
+                </div>)}
+            </div>
+          </section>
+        </div>}
       </main>
 
-      {mode && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm" role="presentation" onMouseDown={e => { if (e.target === e.currentTarget) setMode(null); }}>
-        <section role="dialog" aria-modal="true" aria-label={mode === 'edit' ? 'Edit contact' : 'Create contact'} className="inf-card w-full max-w-lg p-7 shadow-2xl">
-          <div className="mb-7 flex items-start justify-between"><div><p className="mb-2 text-[10px] uppercase tracking-[0.2em] text-[#b9ff45]">Infiniti / Contacts</p><h2 className="text-2xl font-semibold text-white">{mode === 'edit' ? 'Edit contact' : 'New contact'}</h2></div>
-            <button className="inf-icon-button" aria-label="Close dialog" onClick={() => setMode(null)}><X size={18}/></button></div>
-          <form onSubmit={submit} className="space-y-5">{(['firstName','lastName','email','phone'] as const).map(name => <label key={name} className="block text-xs font-medium text-zinc-400">{({firstName:'First name',lastName:'Last name',email:'Email address',phone:'Phone number'} as const)[name]}
-              <input className="inf-input mt-2" required={name === 'firstName'} type={name === 'email' ? 'email' : 'text'} minLength={name === 'phone' ? 3 : undefined} maxLength={name === 'firstName' || name === 'lastName' ? 100 : name === 'phone' ? 30 : undefined}
-                value={values[name]} onChange={e => setValues(v => ({...v,[name]:e.target.value}))} /></label>)}
-            {message && <p role="alert" className="rounded-lg border border-rose-400/20 bg-rose-400/8 p-3 text-sm text-rose-300">{message}</p>}
-            <div className="flex justify-end gap-3 border-t border-white/8 pt-6"><button type="button" className="inf-btn-secondary" onClick={() => setMode(null)}>Cancel</button><button disabled={saving} className="inf-btn disabled:opacity-50">{saving ? 'Saving...' : 'Save contact'} <ArrowUpRight size={16}/></button></div>
+      {mode && <div
+        className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/80 px-4 py-6 backdrop-blur-md sm:py-12"
+        role="presentation" onMouseDown={e => { if (e.target === e.currentTarget) setMode(null); }}>
+        <section role="dialog" aria-modal="true" aria-labelledby="infiniti-contact-dialog-title"
+          className="my-auto w-full max-w-135 overflow-hidden rounded-[28px] border border-[#363636] bg-[#1b1b1b] text-white shadow-[0_30px_100px_rgba(0,0,0,.85)]"
+          style={{backgroundColor:'#1b1b1b', border:'1px solid #363636', borderRadius:28, boxShadow:'0 30px 100px rgba(0,0,0,.85)'}}>
+          <div className="flex items-start justify-between border-b border-white/10 px-6 py-6 sm:px-8">
+            <div><p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#b9ff45]">INFINITI / CONTACTS</p>
+              <h2 id="infiniti-contact-dialog-title" className="text-2xl font-semibold tracking-tight text-white">{mode === 'edit' ? 'Edit contact' : 'Add a new contact'}</h2>
+              <p className="mt-2 text-sm text-zinc-400">{mode === 'edit' ? 'Update the details for this contact.' : 'Keep the important details in one place.'}</p>
+            </div>
+            <button type="button" onClick={() => setMode(null)} aria-label="Close dialog" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/12 bg-[#282828] text-zinc-300 hover:bg-[#363636]"><X size={20}/></button>
+          </div>
+          <form onSubmit={submit} className="px-6 py-7 sm:px-8">
+            <div className="grid gap-5">
+              {(['firstName','lastName','email','phone'] as const).map(name => {
+                const label = ({firstName:'First name',lastName:'Last name',email:'Email address',phone:'Phone number'} as const)[name];
+                const hint = ({firstName:'e.g. Sarah',lastName:'e.g. Connor',email:'sarah@company.com',phone:'+234 800 000 0000'} as const)[name];
+                return <div key={name} className="flex flex-col gap-2">
+                  <label htmlFor={`contact-${name}`} className="text-[13px] font-semibold text-zinc-200">
+                    {label}{name === 'firstName' ? <span className="ml-1 text-[#b9ff45]">*</span> : <span className="ml-2 text-xs font-normal text-zinc-500">Optional</span>}
+                  </label>
+                  <input id={`contact-${name}`} name={name} className="block h-12 w-full rounded-xl border border-[#424242] bg-[#242424] px-4 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-[#b9ff45] focus:ring-2 focus:ring-[#b9ff45]/20"
+                    style={{backgroundColor:'#242424', border:'1px solid #424242', color:'#ffffff', borderRadius:12, minHeight:48, padding:'12px 16px', width:'100%'}}
+                    required={name === 'firstName'} autoComplete={name === 'firstName' ? 'given-name' : name === 'lastName' ? 'family-name' : name === 'email' ? 'email' : 'tel'}
+                    type={name === 'email' ? 'email' : name === 'phone' ? 'tel' : 'text'} placeholder={hint}
+                    minLength={name === 'phone' ? 3 : undefined} maxLength={name === 'firstName' || name === 'lastName' ? 100 : name === 'phone' ? 30 : undefined}
+                    value={values[name]} onChange={e => setValues(v => ({...v,[name]:e.target.value}))}/>
+                </div>;
+              })}
+            </div>
+            {message && <p role="alert" className="mt-5 rounded-xl border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-sm text-rose-300">{message}</p>}
+            <div className="mt-7 flex flex-col-reverse gap-3 border-t border-white/10 pt-6 sm:flex-row sm:justify-end">
+              <button type="button" onClick={() => setMode(null)}
+                className="inline-flex min-h-12 items-center justify-center rounded-xl border border-[#444] bg-[#2b2b2b] px-6 text-sm font-semibold text-white hover:bg-[#393939]"
+                style={{border:'1px solid #444', borderRadius:12, backgroundColor:'#2b2b2b', padding:'12px 24px'}}>Cancel</button>
+              <button type="submit" disabled={saving}
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-[#b9ff45] bg-[#b9ff45] px-6 text-sm font-bold text-[#101010] transition hover:bg-[#d0ff7f] disabled:cursor-wait disabled:opacity-60"
+                style={{backgroundColor:'#b9ff45', color:'#101010', borderRadius:12, padding:'12px 24px', border:'1px solid #b9ff45'}}>
+                {saving ? 'Saving…' : mode === 'edit' ? 'Save changes' : 'Create contact'} <Check size={17} strokeWidth={2.5}/>
+              </button>
+            </div>
           </form>
         </section>
       </div>}
