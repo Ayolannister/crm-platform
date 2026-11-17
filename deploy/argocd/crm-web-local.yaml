@@ -1,0 +1,18 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: crm-web-local
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Ayolannister/crm-platform.git
+    targetRevision: main
+    path: deploy/k8s/crm-web
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: crm
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
