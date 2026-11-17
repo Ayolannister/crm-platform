@@ -5,7 +5,7 @@ type Context = { params: Promise<{ id: string }> };
 
 async function forward(request: NextRequest, ctx: Context, method: 'PATCH' | 'DELETE') {
   const origin = request.headers.get('origin');
-  if (origin && origin !== request.nextUrl.origin) {
+  if (origin && origin !== (process.env.CRM_WEB_ORIGIN ?? request.nextUrl.origin)) {
     return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
   }
   const token = request.cookies.get('crm_session')?.value;
