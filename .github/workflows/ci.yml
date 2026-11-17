@@ -147,8 +147,13 @@ jobs:
 
       - name: Validate local dependency manifests
         run: >
-          docker run --rm -v "$PWD:/work"
-          ghcr.io/yannh/kubeconform:${{ env.KUBECONFORM_VERSION }} -strict -summary /work/deploy/k8s
+              docker run --rm -v "$PWD:/work" \
+              ghcr.io/yannh/kubeconform:${{ env.KUBECONFORM_VERSION }} \
+              -strict -summary \
+              -ignore-filename-pattern 'kustomization\.ya?ml$' \
+               /work/deploy/k8s
+
+
 
   image:
     name: Build, scan and publish image
