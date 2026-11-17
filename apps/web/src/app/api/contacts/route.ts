@@ -6,7 +6,7 @@ const API = process.env.CRM_API_URL ?? "http://127.0.0.1:8080";
 async function proxy(request: NextRequest, method: "GET" | "POST") {
   const origin = request.headers.get("origin");
 
-  if (method === "POST" && origin && origin !== request.nextUrl.origin) {
+  if (method === "POST" && origin && origin !== (process.env.CRM_WEB_ORIGIN ?? request.nextUrl.origin)) {
     return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }
 

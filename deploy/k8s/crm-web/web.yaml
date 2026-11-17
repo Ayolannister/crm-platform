@@ -15,13 +15,15 @@ spec:
     spec:
       containers:
         - name: web
-          image: crm-web:dev
+          image: crm-web:origin-fix
           imagePullPolicy: Never
           ports:
             - containerPort: 3000
           env:
             - name: CRM_API_URL
               value: http://crm-api.crm.svc.cluster.local
+            - name: CRM_WEB_ORIGIN
+              value: http://localhost:3001
             - name: NODE_ENV
               value: production
           readinessProbe:
