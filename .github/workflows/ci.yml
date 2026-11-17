@@ -71,7 +71,7 @@ jobs:
         run: terraform init -backend=false && terraform validate
 
       - name: Scan for misconfigurations
-        run: >
+        run: |
           docker run --rm -v "$PWD:/work"
           aquasec/trivy:${{ env.TRIVY_VERSION }} config
           --exit-code 1 --severity HIGH,CRITICAL /work/infra/terraform
