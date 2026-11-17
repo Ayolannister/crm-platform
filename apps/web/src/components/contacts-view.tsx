@@ -220,7 +220,7 @@ export default function ContactsView({ initialContacts, error }: { initialContac
             className="inline-flex min-h-12 shrink-0 items-center justify-center gap-3 rounded-2xl border border-[#b9ff45] bg-[#b9ff45] px-5 py-3 text-sm font-bold text-[#101010] shadow-[0_8px_24px_rgba(185,255,69,0.18)] transition hover:-translate-y-0.5 hover:bg-[#d0ff7f] focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[#b9ff45]">
             <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-black/10"><Plus size={18} strokeWidth={2.7} aria-hidden="true"/></span>
             New contact
-          </button>
+          </button>}
         </div>
         {message && !mode && <div role="status" className="mb-5 flex items-center gap-3 rounded-xl border border-[#b9ff45]/25 bg-[#b9ff45]/8 px-4 py-3 text-sm text-lime-200"><Check size={17}/>{message}<button className="ml-auto" aria-label="Dismiss notice" onClick={() => setMessage('')}><X size={16}/></button></div>}
 
