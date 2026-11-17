@@ -1,10 +1,16 @@
-# Infiniti — Cloud-Native, Multi-Tenant CRM
+# Infiniti — Multi-Tenant CRM & Cloud-Native DevOps Platform
 
-**Infiniti** is a full-stack customer relationship management app built with **Next.js** and **NestJS**. Register an organization, sign in, manage and search contacts, and view insights drawn from your organization's real contact data.
+**Build connections. Manage relationships. See the bigger picture.**
 
-This repository also demonstrates Docker-based local development, Kubernetes deployment, GitHub Actions CI/CD, GitOps with Argo CD, observability, infrastructure as code, and local database backup/recovery.
+Infiniti is a modern customer relationship management (CRM) application built with **Next.js, NestJS, PostgreSQL, and Redis**. Teams can register an organization, securely sign in, manage contact records, and explore insights calculated from their own data. The interface features a dark, lime-accented dashboard with responsive contact management.
 
-> **New here?** You only need **Git, Docker with Docker Compose, and Node.js 24/npm** to run the application locally. **You do not need Kubernetes, Terraform, Argo CD, Helm, or cloud accounts** for the quick start.
+Alongside the working application, the repository demonstrates **Docker Compose, GitHub Actions, container security scanning, GHCR, Kubernetes, Argo CD GitOps, Terraform, observability, and local encrypted backup exercises**.
+
+> **Start here:** A first-time user can run Infiniti locally with **Git + Docker/Compose + Node.js 24/npm + OpenSSL**. The full Kubernetes toolchain is *optional* and not needed to start or contribute to the web app.
+
+### On this page
+
+[Features](#what-you-can-do) · [Prerequisites](#1-install-prerequisites) · [Fork and clone](#2-fork-or-clone-the-project) · [Local setup](#quick-start-run-infiniti-after-cloning) · [Development](#developer-setup-and-contribution-workflow) · [Troubleshooting](#troubleshooting) · [Advanced deployment](#optional-kubernetes--gitops--operations-setup)
 
 ## What you can do
 
@@ -18,24 +24,49 @@ This repository also demonstrates Docker-based local development, Kubernetes dep
 
 ## Architecture
 
+### Application: what runs on a contributor's computer
+
 ```mermaid
 flowchart LR
-  Browser[Browser] --> Web[Next.js / Infiniti]
-  Web --> API[NestJS CRM API]
-  API --> PG[(PostgreSQL)]
-  API --> Redis[(Redis)]
-  GitHub[GitHub Actions] --> GHCR[GHCR images]
-  GHCR --> Argo[Argo CD / Helm / Kustomize]
-  Argo --> K8s[Kind Kubernetes]
-  K8s --> Web
-  K8s --> API
-  API --> Prom[Prometheus]
-  Prom --> Grafana[Grafana]
-  API --> Alloy[Grafana Alloy]
-  Alloy --> Loki[Loki]
-  Alloy --> Tempo[Tempo]
-  PG --> Backup[Encrypted backup]
-  Backup --> Floci[Local S3 emulator: Floci]
+    browser["Browser"] --> frontend["Infiniti (Next.js)"]
+    frontend --> backend["CRM API (NestJS)"]
+    backend --> postgres[("PostgreSQL")]
+    backend --> redis[("Redis")]
+```
+
+For the **quick start**, Docker Compose manages PostgreSQL, Redis, migrations, and the API. Next.js runs on the host for fast editing.
+
+### Optional DevOps infrastructure
+
+```mermaid
+flowchart LR
+    source["GitHub repository"] --> ci["GitHub Actions"]
+    ci --> registry["GitHub Container Registry"]
+    registry --> releases["Image release pull request"]
+    releases --> gitops["Argo CD"]
+    gitops --> cluster["Kind Kubernetes"]
+    cluster --> telemetry["Prometheus / Grafana / Loki / Tempo"]
+    cluster --> backup["Encrypted local PostgreSQL backup"]
+```
+
+The second diagram describes the **additional local platform workflow**, not a prerequisite for running the app.
+
+## Repository map
+
+```text
+crm-platform/
+├── apps/
+│   ├── web/                 # Infiniti Next.js frontend, forms and API proxies
+│   │   ├── src/             # React components and App Router pages
+│   │   └── .env.example     # Copy to .env.local
+│   └── api/                 # NestJS API, authentication, contacts, migrations
+│       ├── src/
+│       └── .env.example     # Copy to .env and set JWT_SECRET
+├── docker-compose.yml       # Database, Redis, API and one-shot migrations
+├── deploy/                  # Kubernetes, Helm, Argo CD and observability
+├── infra/                   # Terraform and database initialization
+├── scripts/                 # Local operations and verification scripts
+└── .github/workflows/       # CI, security checks and image releases
 ```
 
 ## Tech stack
@@ -69,14 +100,25 @@ Docker must be started and usable by your account (`docker info`). Install these
 
 **Ports used:** `3000` (API), `3001` (web), `5434` (host-accessible PostgreSQL). Redis runs inside Compose. Check that these host ports are free.
 
-### 2. Clone the project
+### 2. Fork or clone the project
 
 ```bash
+# For read-only exploration:
 git clone https://github.com/Ayolannister/crm-platform.git
 cd crm-platform
 ```
 
-To work on a feature branch that has **not yet been merged** into `main`, check out that branch explicitly. Releases and ongoing changes are tracked through GitHub pull requests.
+**Contributing from a fork:** Click **Fork** on GitHub, then clone **your fork** instead:
+
+```bash
+git clone https://github.com/YOUR_GITHUB_USERNAME/crm-platform.git
+cd crm-platform
+git remote add upstream https://github.com/Ayolannister/crm-platform.git
+```
+
+Replace `YOUR_GITHUB_USERNAME` with your GitHub handle; don't type the placeholder literally.
+
+**Important:** The `main` branch is the default checkout. If a feature is under review in a pull request, it is **not automatically included** in the default branch. Switch to its branch intentionally to test it.
 
 ### 3. Configure the API secret (local development only)
 
@@ -121,21 +163,29 @@ If you previously created a PostgreSQL volume with a different password or initi
 
 ### 5. Install frontend dependencies and configure the API URL
 
-In a **second terminal**:
+In a **second terminal**, navigate to the clone (adjust the location if needed):
 
 ```bash
 cd crm-platform/apps/web
 npm ci
 ```
 
-If your second terminal is already in the repository root, use `cd apps/web` instead.
+If your second terminal is already in the repository root, run `cd apps/web` instead. There is **no root-level npm install**; the frontend and API have separate package files.
 
-Create `apps/web/.env.local` with:
+Copy the checked-in, non-secret example:
+
+```bash
+cp .env.example .env.local
+```
+
+It sets:
 
 ```dotenv
 CRM_API_URL=http://127.0.0.1:3000
 CRM_WEB_ORIGIN=http://localhost:3001
 ```
+
+Edit `.env.local` if you use another port or backend address. The example contains **no passwords or secrets**.
 
 These are **development-only** values. The Next.js server uses `CRM_API_URL` to reach NestJS. The app's origin check expects `CRM_WEB_ORIGIN` to match the browser origin **exactly**, including protocol and port. Do not disable origin validation to bypass a configuration mismatch.
 
@@ -158,6 +208,23 @@ docker compose down
 ```
 
 This keeps your PostgreSQL data in its Docker volume. **Do not run `docker compose down -v` unless you intentionally want to delete the local database volume and its data.**
+
+## API endpoints at a glance
+
+The frontend talks to NestJS through Next.js server-side routes. You normally use the browser rather than calling these endpoints manually.
+
+| Method | API path | Purpose |
+| --- | --- | --- |
+| `POST` | `/auth/signup` | Create a user and an organization |
+| `POST` | `/auth/login` | Authenticate and receive a short-lived token |
+| `GET` | `/contacts` | List **only** the signed-in organization's contacts |
+| `POST` | `/contacts` | Create a contact |
+| `PATCH` | `/contacts/:id` | Update one of your organization's contacts |
+| `DELETE` | `/contacts/:id` | Delete one of your organization's contacts |
+| `GET` | `/health/live` | API process liveness |
+| `GET` | `/health/ready` | API database readiness |
+
+For `/contacts` endpoints, supply an `Authorization: Bearer <token>` header. The browser frontend manages its HTTP-only session cookie through Next.js API routes. Tenant boundaries are enforced by NestJS; cross-tenant update/delete attempts do not succeed.
 
 ## Developer setup and contribution workflow
 
@@ -287,7 +354,11 @@ Kind must be able to pull GHCR images (public package or appropriate `imagePullS
 
 ## Screenshots
 
-UI and operational screenshots can be stored under `docs/screenshots/` when reviewed. Avoid exposing credentials or personal customer contact data.
+UI and operational screenshots can be stored under `docs/screenshots/` when reviewed. Suggested screenshots: Infiniti dashboard, contact editor, Grafana dashboard, and Argo CD application health. **Use synthetic test contacts**, not real customer data.
+
+## License
+
+No license file is currently included. Being publicly visible on GitHub is **not** the same as granting an open-source license. Forking and submitting improvements on GitHub is possible, but rights to redistribute or use the code elsewhere depend on the repository owner's licensing decision.
 
 ## Scope and production limitations
 
