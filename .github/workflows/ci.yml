@@ -115,7 +115,7 @@ jobs:
           fetch-depth: 0
 
       - name: Run Gitleaks
-        run: >
+        run: |
           docker run --rm -v "$PWD:/repo"
           zricethezav/gitleaks:${{ env.GITLEAKS_VERSION }}
           detect --source /repo --redact -v
@@ -146,13 +146,8 @@ jobs:
           | docker run --rm -i ghcr.io/yannh/kubeconform:${{ env.KUBECONFORM_VERSION }} -strict -summary -schema-location default -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' -
 
       - name: Validate local dependency manifests
-        run: >
-              docker run --rm -v "$PWD:/work" \
-              ghcr.io/yannh/kubeconform:${{ env.KUBECONFORM_VERSION }} \
-              -strict -summary \
-              -ignore-filename-pattern 'kustomization\.ya?ml$' \
-               /work/deploy/k8s
-
+        run: |
+          docker run --rm -v "$PWD:/work" ghcr.io/yannh/kubeconform:${{ env.KUBECONFORM_VERSION }} -strict -summary -ignore-filename-pattern 'kustomization\\.ya?ml$' /work/deploy/k8s
 
 
   image:
