@@ -10,7 +10,7 @@ Alongside the working application, the repository demonstrates **Docker Compose,
 
 ### On this page
 
-[Features](#what-you-can-do) · [Prerequisites](#1-install-prerequisites) · [Fork and clone](#2-fork-or-clone-the-project) · [Local setup](#quick-start-run-infiniti-after-cloning) · [Development](#developer-setup-and-contribution-workflow) · [Troubleshooting](#troubleshooting) · [Advanced deployment](#optional-kubernetes--gitops--operations-setup)
+[Features](#what-you-can-do) · [Quick setup](#fastest-setup-linuxmacos) · [Prerequisites](#1-install-prerequisites) · [Fork and clone](#2-fork-or-clone-the-project) · [Local setup](#quick-start-run-infiniti-after-cloning) · [Development](#developer-setup-and-contribution-workflow) · [Troubleshooting](#troubleshooting) · [Advanced deployment](#optional-kubernetes--gitops--operations-setup)
 
 ## What you can do
 
@@ -65,7 +65,7 @@ crm-platform/
 ├── docker-compose.yml       # Database, Redis, API and one-shot migrations
 ├── deploy/                  # Kubernetes, Helm, Argo CD and observability
 ├── infra/                   # Terraform and database initialization
-├── scripts/                 # Local operations and verification scripts
+├── scripts/                 # Setup helper, local operations and verification scripts
 └── .github/workflows/       # CI, security checks and image releases
 ```
 
@@ -85,6 +85,23 @@ crm-platform/
 ## Quick start: run Infiniti after cloning
 
 This is the **recommended path for users and first-time contributors**. It runs the database, Redis, API, and migrations in Docker Compose; Next.js runs on your computer for hot reload.
+
+### Fastest setup (Linux/macOS)
+
+After you **fork/clone** the repository and install the tools below, this helper generates a unique local JWT secret, copies example environment files without overwriting existing ones, starts the Docker Compose services, and installs the frontend dependencies:
+
+```bash
+# Run from the repository root
+bash scripts/setup-local.sh
+
+# Start the Next.js development server
+cd apps/web
+npm run dev -- -p 3001
+```
+
+Open **http://localhost:3001**, create an organization and account, and start managing contacts.
+
+This is optional: the manual, fully explained steps below perform the same setup. The bootstrap script uses **local development credentials**; it is not a production deployment tool.
 
 ### 1. Install prerequisites
 
