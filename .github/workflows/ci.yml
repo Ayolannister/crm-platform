@@ -72,9 +72,8 @@ jobs:
 
       - name: Scan for misconfigurations
         run: |
-          docker run --rm -v "$PWD:/work"
-          aquasec/trivy:${{ env.TRIVY_VERSION }} config
-          --exit-code 1 --severity HIGH,CRITICAL /work/infra/terraform
+          docker run --rm -v "$PWD:/work" aquasec/trivy:${{ env.TRIVY_VERSION }} config --exit-code 1 --severity HIGH,CRITICAL /work/infra/terraform
+
 
   test:
     name: Lint, test, build
@@ -116,9 +115,9 @@ jobs:
 
       - name: Run Gitleaks
         run: |
-          docker run --rm -v "$PWD:/repo"
-          zricethezav/gitleaks:${{ env.GITLEAKS_VERSION }}
-          detect --source /repo --redact -v
+          docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:${{ env.GITLEAKS_VERSION }} detect --source /repo --redact -v
+
+
 
   manifests:
     name: Validate Kubernetes manifests
@@ -145,10 +144,9 @@ jobs:
           helm template crm-api deploy/helm/crm-api -n crm -f deploy/helm/crm-api/values-aws-dev.yaml
           | docker run --rm -i ghcr.io/yannh/kubeconform:${{ env.KUBECONFORM_VERSION }} -strict -summary -schema-location default -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' -
 
-      - name: Validate local dependency manifests
+       - name: Validate local dependency manifests
         run: |
-          docker run --rm -v "$PWD:/work" ghcr.io/yannh/kubeconform:${{ env.KUBECONFORM_VERSION }} -strict -summary -ignore-filename-pattern 'kustomization\\.ya?ml$' /work/deploy/k8s
-
+          docker run --rm -v "$PWD:/work" ghcr.io/yannh/kubeconform:${{ env.KUBECONFORM_VERSION }} -strict -summary -ignore-filename-pattern 'kustomization\.ya?ml$' /work/deploy/k8s
 
   image:
     name: Build, scan and publish image
