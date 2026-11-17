@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  ArrowUpRight, BarChart3, Check, ChevronRight, Download, FileDown, KeyRound,
+  ArrowUpRight, BarChart3, Check, ChevronRight, Download, KeyRound,
   LayoutDashboard, LogOut, Mail, Menu, Database, LockKeyhole,
   Pencil, Phone, Plus, Search, Settings, ShieldCheck, SlidersHorizontal, Trash2, Users, X
 } from 'lucide-react';
@@ -26,7 +26,10 @@ export default function ContactsView({ initialContacts, error }: { initialContac
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [compactRows, setCompactRows] = useState(false);
   useEffect(() => {
-    setCompactRows(window.localStorage.getItem('infiniti-compact-rows') === 'true');
+    const timer = window.setTimeout(() => {
+      setCompactRows(window.localStorage.getItem('infiniti-compact-rows') === 'true');
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
   function toggleCompactRows() {
     setCompactRows(value => {
