@@ -1,5 +1,6 @@
 # syntax=docker/dockerfile:1
 FROM node:24-alpine AS deps
+RUN npm install -g npm@latest
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
