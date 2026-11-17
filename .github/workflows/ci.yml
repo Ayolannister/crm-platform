@@ -144,7 +144,7 @@ jobs:
           helm template crm-api deploy/helm/crm-api -n crm -f deploy/helm/crm-api/values-aws-dev.yaml
           | docker run --rm -i ghcr.io/yannh/kubeconform:${{ env.KUBECONFORM_VERSION }} -strict -summary -schema-location default -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' -
 
-       - name: Validate local dependency manifests
+      - name: Validate local dependency manifests
         run: |
           docker run --rm -v "$PWD:/work" ghcr.io/yannh/kubeconform:${{ env.KUBECONFORM_VERSION }} -strict -summary -ignore-filename-pattern 'kustomization\.ya?ml$' /work/deploy/k8s
 
@@ -223,9 +223,12 @@ jobs:
           docker push "$IMAGE:$TAG"
           docker push "$IMAGE:main"
           DIGEST=$(docker inspect --format '{{index .RepoDigests 0}}' "$IMAGE:$TAG" | cut -d@ -f2)
-          echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
-          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
-          echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
+          {
+            echo "image=$IMAGE"
+            echo "tag=$TAG"
+            echo "digest=$DIGEST"
+          } >> "$GITHUB_OUTPUT"
+
           echo "Published \`$IMAGE:$TAG\` (\`$DIGEST\`)" >> "$GITHUB_STEP_SUMMARY"
 
   release-local:
