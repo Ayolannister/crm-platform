@@ -23,7 +23,7 @@ export async function POST(request: NextRequest, context: Context) {
     return response;
   }
 
-  if (action !== "login" && action !== "signup") {
+  if (action !== "login" && action !== "signup" && action !== "switch") {
     return NextResponse.json(
       { message: "Unknown action" },
       { status: 404 }
@@ -33,9 +33,17 @@ export async function POST(request: NextRequest, context: Context) {
   try {
     const payload = await request.json();
 
+    const sessionToken = request.cookies.get(COOKIE)?.value;
+    if (action === "switch" && !sessionToken) {
+      return NextResponse.json({ message: "Please log in" }, { status: 401 });
+    }
+
     const upstream = await fetch(`${API}/auth/${action}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(action === "switch" ? { Authorization: `Bearer ${sessionToken}` } : {}),
+      },
       body: JSON.stringify(payload),
       cache: "no-store",
       signal: AbortSignal.timeout(10000),
@@ -70,5 +78,20 @@ export async function POST(request: NextRequest, context: Context) {
       { message: "Unable to reach the CRM backend" },
       { status: 502 }
     );
+  }
+}
+
+export async function GET(request: NextRequest, context: Context) {
+  const {action} = await context.params;
+  if (action !== "organizations") return NextResponse.json({message:"Not found"},{status:404});
+  const token = request.cookies.get(COOKIE)?.value;
+  if (!token) return NextResponse.json({message:"Please log in"},{status:401});
+  try {
+    const upstream = await fetch(`${API}/auth/organizations`,{
+      headers:{Authorization:`Bearer ${token}`},cache:"no-store",signal:AbortSignal.timeout(10000)
+    });
+    return NextResponse.json(await upstream.json(),{status:upstream.status});
+  } catch {
+    return NextResponse.json({message:"Backend unavailable"},{status:502});
   }
 }
