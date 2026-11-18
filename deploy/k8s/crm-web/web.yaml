@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: web
-          image: ghcr.io/ayolannister/crm-web@sha256:63ac0da0ff68d69fe069e4cf87c23f73b46f6fd038f80587e2d70f9632cd1aaf
+          image: ghcr.io/ayolannister/crm-web@sha256:a440f0a9e3049078324384457f650b32c41334cc90711083542411d32f2c19d5
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
