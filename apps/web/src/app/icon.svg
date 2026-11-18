@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Infiniti logo">
+  <title>Infiniti</title>
+  <rect width="64" height="64" rx="15" fill="#b9ff45"/>
+  <path d="M32 32C26 24 21 19 16 20C9 21 7 28 10 35C13 43 20 45 26 38L32 32C38 24 43 19 49 20C56 21 58 28 55 35C52 43 45 45 39 38L32 32"
+        fill="none" stroke="#111111" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
