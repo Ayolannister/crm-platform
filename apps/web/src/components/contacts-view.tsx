@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import {
   ArrowUpRight, BarChart3, Check, ChevronRight, Download, KeyRound,
   LayoutDashboard, LogOut, Mail, Menu, Database, LockKeyhole,
@@ -13,7 +14,7 @@ type FormValues = { firstName: string; lastName: string; email: string; phone: s
 type View = 'overview' | 'contacts' | 'analytics' | 'settings';
 const empty: FormValues = { firstName: '', lastName: '', email: '', phone: '' };
 
-export default function ContactsView({ initialContacts, error }: { initialContacts: Contact[]; error: string }) {
+export default function ContactsView({ initialContacts, error, adminAccess = { organizationAdmin: false, platformAdmin: false } }: { initialContacts: Contact[]; error: string; adminAccess?: { organizationAdmin: boolean; platformAdmin: boolean } }) {
   const router = useRouter();
   const [view, setView] = useState<View>('overview');
   const [query, setQuery] = useState('');
@@ -192,6 +193,11 @@ export default function ContactsView({ initialContacts, error }: { initialContac
             <item.icon size={18}/>{item.name}
           </button>)}
         </nav>
+        {(adminAccess.organizationAdmin || adminAccess.platformAdmin) && <div className="mt-7 border-t border-white/10 pt-6">
+          <div className="mb-3 px-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-600">Administration</div>
+          {adminAccess.organizationAdmin && <Link href="/admin/organization" className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm text-zinc-400 transition hover:bg-white/6 hover:text-white"><ShieldCheck size={18}/> Organization admin</Link>}
+          {adminAccess.platformAdmin && <Link href="/admin/platform" className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm text-zinc-400 transition hover:bg-white/6 hover:text-white"><KeyRound size={18}/> Platform admin</Link>}
+        </div>}
         <div className="mt-auto">
           <div className="inf-card mb-5 p-4"><div className="flex items-center gap-2 text-xs font-semibold text-[#b9ff45]"><ShieldCheck size={15}/> Private workspace</div>
             <p className="mt-2 text-xs leading-5 text-zinc-500">Your contacts are isolated to your organization.</p></div>
