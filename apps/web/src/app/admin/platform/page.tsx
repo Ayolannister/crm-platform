@@ -2,9 +2,9 @@ import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { PlatformPanel } from "@/components/admin-panel";
 
-export const dynamic = "force-dynamic";
+import { Suspense } from "react";
 
-export default async function PlatformAdminPage() {
+async function PlatformAdminPage() {
   const token=(await cookies()).get("crm_session")?.value;
   if(!token) redirect("/login");
   const api=process.env.CRM_API_URL??"http://127.0.0.1:8080";
@@ -16,4 +16,10 @@ export default async function PlatformAdminPage() {
   if(response.status===403||response.status===404) notFound();
   if(!response.ok) throw new Error("Unable to load platform administration");
   return <PlatformPanel data={await response.json()}/>;
+}
+
+export default function Page() {
+  return <Suspense fallback={<main className="min-h-screen bg-[#090909] p-12 text-sm text-zinc-400">Loading platform administration…</main>}>
+    <PlatformAdminPage/>
+  </Suspense>;
 }
