@@ -243,6 +243,59 @@ The frontend talks to NestJS through Next.js server-side routes. You normally us
 
 For `/contacts` endpoints, supply an `Authorization: Bearer <token>` header. The browser frontend manages its HTTP-only session cookie through Next.js API routes. Tenant boundaries are enforced by NestJS; cross-tenant update/delete attempts do not succeed.
 
+## Administration dashboards
+
+Infiniti has two separate **API-enforced** administration areas:
+
+| Area | URL | Access | MVP capabilities |
+| --- | --- | --- | --- |
+| Organization administration | `/admin/organization` | Current organization's `owner` or `admin` | View organization/contact/member counts, add an existing registered user, switch organization, and (owners only) change roles/remove non-owner members |
+| Platform administration | `/admin/platform` | An existing account explicitly present in `platform_admins` | Read-only organization directory and aggregate organization, user and membership counts |
+
+- Every new organization creator becomes its **owner** automatically.
+- Organization admins can add existing accounts as `member` but cannot promote other users, remove users, or change ownership; owners manage other admins/members.
+- Added users can switch to a different organization; their membership is revalidated on every authenticated API request, so revoking membership immediately blocks their existing token.
+- Platform administrators are **not** created through public signup or frontend settings. They are granted manually by an authorized database administrator.
+- Platform admins do **not** gain unrestricted customer contact access; per-organization contacts remain protected by PostgreSQL row-level security.
+- No automated email invitations, account suspension, billing tools, cross-tenant contact viewing, or audit-log UI are implemented.
+
+### Deploying the admin schema
+
+The admin APIs require the additional database migration `apps/api/drizzle/0003_platform_admins.sql`. Run the API's normal, reviewed Drizzle migrations **before deploying the admin-enabled backend**; use the privileged migration connection and never the restricted `infiniti_app` runtime connection. On a fresh Docker Compose install, the `migrate` service applies migrations automatically.
+
+For production Neon, obtain a **direct** migration connection string from Neon and execute the existing migration process in an authorized environment with `MIGRATION_DATABASE_URL` set. Do not put a migration-owner password in GitHub, Vercel frontend settings, shell history, or the README.
+
+### Granting the first platform admin
+
+1. Register **your own** Infiniti user account normally.
+2. In Neon SQL Editor, connected as the database owner, look up the user UUID by the **exact email you registered** (do not send that email or any credential to contributors):
+
+```sql
+SELECT id, email FROM users WHERE email = 'YOUR_REGISTERED_EMAIL';
+```
+
+3. After verifying it is the intended account, grant the role:
+
+```sql
+INSERT INTO platform_admins (user_id)
+SELECT id FROM users WHERE email = 'YOUR_REGISTERED_EMAIL'
+ON CONFLICT (user_id) DO NOTHING;
+```
+
+4. Sign out and sign back in. Open `/admin/platform`. Ordinary users should receive HTTP 403 from the platform API.
+
+To revoke a platform grant, a database administrator can delete that account's row from `platform_admins`; no public HTTP endpoint can assign or remove platform grants. The backend checks the grants table on each platform-admin request.
+
+### Admin permission tests
+
+Use a **disposable local environment**; the script creates two organizations and accounts:
+
+```bash
+bash scripts/test-crm-admin-e2e.sh
+```
+
+It verifies owner access, member restrictions, member promotion, cross-role restrictions, platform-admin denial for ordinary owners, organization switching and immediate token revocation on member removal. It removes its added membership, but the two test accounts and organizations remain.
+
 ## Developer setup and contribution workflow
 
 The quick start above is enough to modify **`apps/web`** (frontend) while testing against the containerized API.
