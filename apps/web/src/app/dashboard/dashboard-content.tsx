@@ -57,5 +57,20 @@ export default async function DashboardPage() {
     error = "Unable to reach the CRM backend";
   }
 
-  return <ContactsView initialContacts={contacts} error={error} />;
+  let adminAccess = {organizationAdmin:false,platformAdmin:false};
+  try {
+    const context = await fetch(`${api}/admin/context`, {
+      headers: {Authorization:`Bearer ${token}`},
+      cache:"no-store",
+      signal:AbortSignal.timeout(8000),
+    });
+    if (context.ok) {
+      const result = await context.json();
+      adminAccess = {organizationAdmin:result.organizationAdmin===true,platformAdmin:result.platformAdmin===true};
+    }
+  } catch {
+    // Core contacts remain usable if optional admin information is unavailable.
+  }
+
+  return <ContactsView initialContacts={contacts} error={error} adminAccess={adminAccess} />;
 }

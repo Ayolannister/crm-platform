@@ -6,9 +6,10 @@ import { DbModule } from './db/db.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { ContactsModule } from './contacts/contacts.module.js';
 import { MetricsModule } from './metrics/metrics.module.js';
+import { AdminModule } from './admin/admin.module.js';
 
 @Module({
-  imports: [DbModule, AuthModule, ContactsModule, MetricsModule],
+  imports: [DbModule, AuthModule, ContactsModule, MetricsModule, AdminModule],
   controllers: [AppController, HealthController],
   providers: [AppService],
 })

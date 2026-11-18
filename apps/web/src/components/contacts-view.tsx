@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import {
   ArrowUpRight, BarChart3, Check, ChevronRight, Download, KeyRound,
   LayoutDashboard, LogOut, Mail, Menu, Database, LockKeyhole,
@@ -13,7 +14,7 @@ type FormValues = { firstName: string; lastName: string; email: string; phone: s
 type View = 'overview' | 'contacts' | 'analytics' | 'settings';
 const empty: FormValues = { firstName: '', lastName: '', email: '', phone: '' };
 
-export default function ContactsView({ initialContacts, error }: { initialContacts: Contact[]; error: string }) {
+export default function ContactsView({ initialContacts, error, adminAccess = { organizationAdmin: false, platformAdmin: false } }: { initialContacts: Contact[]; error: string; adminAccess?: { organizationAdmin: boolean; platformAdmin: boolean } }) {
   const router = useRouter();
   const [view, setView] = useState<View>('overview');
   const [query, setQuery] = useState('');
@@ -25,6 +26,43 @@ export default function ContactsView({ initialContacts, error }: { initialContac
   const [busyId, setBusyId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [compactRows, setCompactRows] = useState(false);
+  const [workspaces, setWorkspaces] = useState<{id:string;name:string;role:string}[]>([]);
+  const [activeOrg, setActiveOrg] = useState<string>('');
+  const [switching, setSwitching] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([
+      fetch('/api/auth/organizations', {cache:'no-store'}),
+      fetch('/api/admin/context', {cache:'no-store'})
+    ]).then(async ([orgs, context]) => {
+      if (!cancelled && orgs.ok) {
+        const list: unknown = await orgs.json();
+        if (Array.isArray(list)) setWorkspaces(list);
+      }
+      if (!cancelled && context.ok) {
+        const profile = await context.json();
+        setActiveOrg(profile.orgId ?? '');
+      }
+    }).catch(() => {});
+    return () => {cancelled = true;};
+  }, []);
+  async function changeWorkspace(orgId:string) {
+    if (!orgId || orgId===activeOrg) return;
+    setSwitching(true);setMessage('');
+    try {
+      const res = await fetch('/api/auth/switch', {
+        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({orgId})
+      });
+      if (!res.ok) {
+        const body = await res.json();
+        throw new Error(Array.isArray(body.message) ? body.message.join(', ') : body.message || 'Unable to switch workspace');
+      }
+      window.location.assign('/dashboard');
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : 'Unable to switch workspace');
+      setSwitching(false);
+    }
+  }
   useEffect(() => {
     const timer = window.setTimeout(() => {
       setCompactRows(window.localStorage.getItem('infiniti-compact-rows') === 'true');
@@ -186,12 +224,24 @@ export default function ContactsView({ initialContacts, error }: { initialContac
           <button aria-label="Close sidebar" className="text-zinc-400 lg:hidden" onClick={() => setSidebarOpen(false)}><X size={20}/></button>
         </div>
         <div className="mx-2 mt-12 text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-600">Workspace</div>
+        {workspaces.length > 1 && <div className="mt-3 px-2">
+          <label className="sr-only" htmlFor="infiniti-workspace-select">Select organization</label>
+          <select id="infiniti-workspace-select" className="inf-input w-full text-xs" value={activeOrg}
+            disabled={switching || !activeOrg} onChange={e => void changeWorkspace(e.target.value)}>
+            {workspaces.map(w => <option key={w.id} value={w.id}>{w.name} ({w.role})</option>)}
+          </select>
+        </div>}
         <nav className="mt-4 space-y-1" aria-label="Main navigation">
           {navigation.map(item => <button key={item.id} onClick={() => go(item.id)} aria-current={view === item.id ? 'page' : undefined}
             className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm transition-all ${view === item.id ? 'bg-[#b9ff45] font-semibold text-[#111]' : 'text-zinc-400 hover:bg-white/6 hover:text-white'}`}>
             <item.icon size={18}/>{item.name}
           </button>)}
         </nav>
+        {(adminAccess.organizationAdmin || adminAccess.platformAdmin) && <div className="mt-7 border-t border-white/10 pt-6">
+          <div className="mb-3 px-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-600">Administration</div>
+          {adminAccess.organizationAdmin && <Link href="/admin/organization" className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm text-zinc-400 transition hover:bg-white/6 hover:text-white"><ShieldCheck size={18}/> Organization admin</Link>}
+          {adminAccess.platformAdmin && <Link href="/admin/platform" className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm text-zinc-400 transition hover:bg-white/6 hover:text-white"><KeyRound size={18}/> Platform admin</Link>}
+        </div>}
         <div className="mt-auto">
           <div className="inf-card mb-5 p-4"><div className="flex items-center gap-2 text-xs font-semibold text-[#b9ff45]"><ShieldCheck size={15}/> Private workspace</div>
             <p className="mt-2 text-xs leading-5 text-zinc-500">Your contacts are isolated to your organization.</p></div>
