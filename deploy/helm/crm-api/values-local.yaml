@@ -1,5 +1,5 @@
 image:
-  digest: sha256:053c3a7c303c7be1b3504c8de21e131763c4f02b69d407b6641dba7f4f480212
+  digest: sha256:0a6d03b8dad464aa8c42055361d76cfed7d6026cc4facb714c29f72f8349d2d9
 metrics:
   serviceMonitor:
     enabled: true
