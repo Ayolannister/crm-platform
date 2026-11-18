@@ -2,7 +2,7 @@
       ConflictException, Inject, Injectable, UnauthorizedException,
     } from '@nestjs/common';
     import { JwtService } from '@nestjs/jwt';
-    import { asc, eq } from 'drizzle-orm';
+    import { and, asc, eq } from 'drizzle-orm';
     import { DB } from '../db/db.tokens.js';
     import type { Database } from '../db/tenant-db.service.js';
     import { memberships, organizations, users } from '../db/schema.js';
@@ -63,6 +63,21 @@
         if (!membership) throw new UnauthorizedException('No organization access');
 
         return this.issueToken(user.id, membership.orgId, membership.role);
+      }
+
+      async organizationsForUser(userId: string) {
+        return this.db.select({
+          id: organizations.id, name: organizations.name, slug: organizations.slug,
+          role: memberships.role,
+        }).from(memberships).innerJoin(organizations, eq(memberships.orgId, organizations.id))
+          .where(eq(memberships.userId, userId)).orderBy(asc(memberships.createdAt));
+      }
+
+      async switchOrganization(userId: string, orgId: string) {
+        const [membership] = await this.db.select({role:memberships.role})
+          .from(memberships).where(and(eq(memberships.userId, userId),eq(memberships.orgId,orgId))).limit(1);
+        if (!membership) throw new UnauthorizedException('Not a member of this organization');
+        return this.issueToken(userId, orgId, membership.role);
       }
 
       private async issueToken(userId: string, orgId: string, role: string) {
