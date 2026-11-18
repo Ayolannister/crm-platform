@@ -2,9 +2,9 @@ import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { OrganizationPanel } from "@/components/admin-panel";
 
-export const dynamic = "force-dynamic";
+import { Suspense } from "react";
 
-export default async function OrganizationAdminPage() {
+async function OrganizationAdminPage() {
   const token=(await cookies()).get("crm_session")?.value;
   if(!token) redirect("/login");
   const api=process.env.CRM_API_URL??"http://127.0.0.1:8080";
@@ -18,4 +18,10 @@ export default async function OrganizationAdminPage() {
   if(!org.ok) throw new Error("Unable to load organization administration");
   const data=await org.json();
   return <OrganizationPanel data={data} workspaces={workspaces.ok?await workspaces.json():[]}/>;
+}
+
+export default function Page() {
+  return <Suspense fallback={<main className="min-h-screen bg-[#090909] p-12 text-sm text-zinc-400">Loading organization administration…</main>}>
+    <OrganizationAdminPage/>
+  </Suspense>;
 }
