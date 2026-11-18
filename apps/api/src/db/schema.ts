@@ -42,3 +42,8 @@
      },
      (t) => [index('contacts_org_id_idx').on(t.orgId)],
    );
+// Platform administrators are granted manually in the database; never via public signup.
+export const platformAdmins = pgTable('platform_admins', {
+  userId: uuid('user_id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
